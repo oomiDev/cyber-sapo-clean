@@ -25,7 +25,18 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middlewares de seguridad y configuración
-app.use(helmet()); // Seguridad HTTP headers
+app.use(
+    helmet.contentSecurityPolicy({
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            "script-src": [
+                "'self'", 
+                "'sha256-2J/+R9s94sO9lH0q9miRwuKuFisH2OMhjxu8tVgo6UFs='",
+                "https://cdn.jsdelivr.net"
+            ],
+        },
+    })
+); // Seguridad HTTP headers
 app.use(cors()); // Permitir peticiones cross-origin
 app.use(express.json({ limit: '10mb' })); // Parser JSON
 app.use(express.urlencoded({ extended: true })); // Parser URL encoded
