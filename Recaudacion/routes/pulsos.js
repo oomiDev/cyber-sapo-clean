@@ -11,6 +11,17 @@ const Maquina = require('../models/Maquina');
 const Pulso = require('../models/Pulso');
 
 /**
+ * GET /api/pulsos/test
+ * RUTA DE PRUEBA PARA VERIFICAR CONECTIVIDAD
+ */
+router.get('/test', (req, res) => {
+    res.status(200).json({
+        mensaje: '✅ Servidor de pulsos operativo y listo para recibir datos.',
+        timestamp: new Date().toISOString()
+    });
+});
+
+/**
  * POST /api/pulsos/recibir
  * ENDPOINT PRINCIPAL PARA RECIBIR PULSOS DE LAS MÁQUINAS
  * 
