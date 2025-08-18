@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Test - Puerto 3002</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .dashboard-container {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            padding: 30px;
+            margin: 20px;
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 10px 0;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .metric-label {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .refresh-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            margin: 10px 5px;
+        }
+        
+        .status-indicator {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        
+        .status-online { background: #00ff00; box-shadow: 0 0 10px #00ff00; }
+        .status-offline { background: #ff0000; box-shadow: 0 0 10px #ff0000; }
+        
+        .pulse-log {
+            background: #1a1a1a;
+            color: #00ff00;
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="dashboard-container">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h1><i class="fas fa-chart-line"></i> Dashboard Test - Puerto 3002</h1>
+                    <p class="lead">
+                        <span id="statusIndicator" class="status-indicator status-offline"></span>
+                        <span id="statusText">Verificando conexión...</span>
+                    </p>
+                    <button class="refresh-btn" onclick="cargarDatos()">
+                        <i class="fas fa-sync"></i> Actualizar
+                    </button>
+                    <button class="refresh-btn" onclick="toggleAutoRefresh()">
+                        <i class="fas fa-play"></i> <span id="autoText">Auto</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Métricas Principales -->
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-value" id="totalPulsos">0</div>
+                        <div class="metric-label">Total Pulsos</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-value" id="totalIngresos">€0.00</div>
+                        <div class="metric-label">Total Ingresos</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-value" id="maquinasActivas">0</div>
+                        <div class="metric-label">Máquinas Activas</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-value" id="pulsosHoy">0</div>
+                        <div class="metric-label">Pulsos Hoy</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Log de Pulsos -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h3><i class="fas fa-list"></i> Log de Pulsos Recientes</h3>
+                    <div class="pulse-log" id="pulseLog">
+                        <div>Esperando datos...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estado del Servidor -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h3><i class="fas fa-server"></i> Estado del Servidor</h3>
+                    <div class="pulse-log" id="serverStatus">
+                        <div>Verificando estado...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SERVER_URL = 'http://localhost:3002';
+        let autoRefresh = false;
+        let autoInterval = null;
+
+        // Cargar datos del dashboard
+        async function cargarDatos() {
+            try {
+                // Obtener estadísticas
+                const statsResponse = await fetch(`${SERVER_URL}/api/analytics/dashboard`);
+                const statsData = await statsResponse.json();
+                
+                if (statsResponse.ok && statsData.exito) {
+                    const stats = statsData.estadisticas;
+                    
+                    // Actualizar métricas
+                    document.getElementById('totalPulsos').textContent = stats.totalMaquinas || 0;
+                    document.getElementById('totalIngresos').textContent = `€${(stats.totalIngresos || 0).toFixed(2)}`;
+                    document.getElementById('maquinasActivas').textContent = stats.maquinasActivas || 0;
+                    document.getElementById('pulsosHoy').textContent = stats.pulsosHoy || 0;
+                    
+                    updateStatus(true, 'Conectado - Datos actualizados');
+                } else {
+                    throw new Error('Error en respuesta del servidor');
+                }
+
+                // Obtener pulsos recientes
+                const pulsosResponse = await fetch(`${SERVER_URL}/api/pulsos`);
+                const pulsosData = await pulsosResponse.json();
+                
+                if (pulsosResponse.ok && pulsosData.exito) {
+                    updatePulseLog(pulsosData.pulsos || []);
+                }
+
+                // Obtener estado del servidor
+                const statusResponse = await fetch(`${SERVER_URL}/api/status`);
+                const statusData = await statusResponse.json();
+                
+                if (statusResponse.ok) {
+                    updateServerStatus(statusData);
+                }
+
+            } catch (error) {
+                console.error('Error cargando datos:', error);
+                updateStatus(false, `Error: ${error.message}`);
+            }
+        }
+
+        function updateStatus(online, message) {
+            const indicator = document.getElementById('statusIndicator');
+            const text = document.getElementById('statusText');
+            
+            indicator.className = `status-indicator ${online ? 'status-online' : 'status-offline'}`;
+            text.textContent = message;
+        }
+
+        function updatePulseLog(pulsos) {
+            const logContainer = document.getElementById('pulseLog');
+            
+            if (pulsos.length === 0) {
+                logContainer.innerHTML = '<div>No hay pulsos registrados</div>';
+                return;
+            }
+
+            const logEntries = pulsos.slice(-10).reverse().map(pulso => {
+                const fecha = new Date(pulso.timestamp).toLocaleString();
+                return `<div>[${fecha}] 💰 ${pulso.codigoMaquina} - €${pulso.valor.toFixed(2)} (${pulso.tipo})</div>`;
+            }).join('');
+
+            logContainer.innerHTML = logEntries;
+        }
+
+        function updateServerStatus(status) {
+            const statusContainer = document.getElementById('serverStatus');
+            const timestamp = new Date().toLocaleString();
+            
+            statusContainer.innerHTML = `
+                <div>[${timestamp}] 🖥️ Servidor: ${status.servidor}</div>
+                <div>[${timestamp}] 💾 Base de Datos: ${status.baseDatos}</div>
+                <div>[${timestamp}] 📊 Estadísticas: ${status.estadisticas ? JSON.stringify(status.estadisticas) : 'N/A'}</div>
+            `;
+        }
+
+        function toggleAutoRefresh() {
+            if (autoRefresh) {
+                clearInterval(autoInterval);
+                autoRefresh = false;
+                document.getElementById('autoText').textContent = 'Auto';
+            } else {
+                autoInterval = setInterval(cargarDatos, 2000); // Cada 2 segundos
+                autoRefresh = true;
+                document.getElementById('autoText').textContent = 'Parar';
+            }
+        }
+
+        // Cargar datos al iniciar
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarDatos();
+            // Auto-refresh cada 5 segundos por defecto
+            setInterval(cargarDatos, 5000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+/**
+ * CYBER SAPO - Estilos Base
+ * 
+ * EXPLICACIÓN PARA NIÑOS:
+ * Este archivo tiene los estilos "básicos" que usa todo el juego.
+ * Es como decidir qué colores, fuentes y tamaños vamos a usar en general.
+ * 
+ * Piénsalo como elegir los colores de tu cuarto: una vez que eliges,
+ * todo en el cuarto usa esos colores.
+ */
+
+/* PASO 1: Definir los colores principales del juego */
+:root {
+    /* Colores neón (brillantes y llamativos) */
+    --color-cyan: #00ffff;          /* Azul brillante */
+    --color-verde: #00ff88;         /* Verde brillante */
+    --color-rosa: #ff00ff;          /* Rosa brillante */
+    --color-amarillo: #ffff00;      /* Amarillo brillante */
+    
+    /* Colores oscuros para el fondo */
+    --fondo-principal: #0a0a0f;     /* Casi negro */
+    --fondo-secundario: #1a1a2e;    /* Azul muy oscuro */
+    --fondo-tarjetas: #16213e;      /* Azul oscuro para tarjetas */
+    
+    /* Colores para texto */
+    --texto-principal: #ffffff;     /* Blanco */
+    --texto-secundario: #b0b0b0;    /* Gris claro */
+    
+    /* Efectos de brillo */
+    --brillo-suave: 0 0 10px;
+    --brillo-fuerte: 0 0 20px;
+    --brillo-intenso: 0 0 30px;
+}
+
+/* PASO 2: Resetear todos los elementos para que empiecen igual */
+* {
+    margin: 0;                      /* Sin márgenes */
+    padding: 0;                     /* Sin espacios internos */
+    box-sizing: border-box;         /* Calcular tamaños de forma fácil */
+}
+
+/* PASO 3: Configurar el cuerpo de la página */
+body {
+    font-family: 'Courier New', monospace;  /* Fuente de computadora retro */
+    background: linear-gradient(135deg, var(--fondo-principal), var(--fondo-secundario));
+    color: var(--texto-principal);
+    min-height: 100vh;              /* Ocupar toda la pantalla */
+    overflow-x: hidden;             /* No mostrar barra horizontal */
+}
+
+/* PASO 4: Estilos para títulos principales */
+h1 {
+    font-size: 3em;                 /* Muy grande */
+    color: var(--color-verde);
+    text-shadow: var(--brillo-fuerte) var(--color-verde);
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+h2 {
+    font-size: 2em;                 /* Grande */
+    color: var(--color-cyan);
+    text-shadow: var(--brillo-suave) var(--color-cyan);
+    margin-bottom: 15px;
+}
+
+h3 {
+    font-size: 1.5em;               /* Mediano */
+    color: var(--color-rosa);
+    margin-bottom: 10px;
+}
+
+/* PASO 5: Estilos para párrafos y texto normal */
+p {
+    line-height: 1.6;               /* Espaciado entre líneas */
+    margin-bottom: 10px;
+}
+
+/* PASO 6: Contenedor principal de toda la aplicación */
+.contenedor-principal {
+    max-width: 1200px;              /* Ancho máximo */
+    margin: 0 auto;                 /* Centrar en la pantalla */
+    padding: 20px;
+}
+
+/* PASO 7: Estilos para las pantallas del juego */
+.pantalla {
+    display: none;                  /* Ocultas por defecto */
+    padding: 20px;
+    border-radius: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid var(--color-cyan);
+    box-shadow: var(--brillo-suave) var(--color-cyan);
+}
+
+.pantalla.activa {
+    display: block;                 /* Mostrar cuando está activa */
+    animation: aparecerSuave 0.5s ease-in;
+}
+
+/* PASO 8: Animación para cuando aparecen las pantallas */
+@keyframes aparecerSuave {
+    from {
+        opacity: 0;                 /* Invisible */
+        transform: translateY(20px); /* Un poco hacia abajo */
+    }
+    to {
+        opacity: 1;                 /* Visible */
+        transform: translateY(0);    /* En su posición normal */
+    }
+}
+
+/* PASO 9: Animación de pulso para elementos importantes */
+@keyframes pulsoNeon {
+    0% { 
+        text-shadow: 0 0 5px currentColor; 
+    }
+    100% { 
+        text-shadow: var(--brillo-intenso) currentColor; 
+    }
+}
+
+.pulso {
+    animation: pulsoNeon 2s ease-in-out infinite alternate;
+}
+
+/* PASO 10: Utilidades para mostrar/ocultar elementos */
+.oculto {
+    display: none !important;
+}
+
+.visible {
+    display: block !important;
+}
+
+.centrado {
+    text-align: center;
+}
+
+.margen-grande {
+    margin: 20px 0;
+}
+
+.margen-pequeno {
+    margin: 10px 0;
+}

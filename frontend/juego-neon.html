@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌟 CYBER SAPO - Juego Futurista</title>
+    <link rel="stylesheet" href="neon-style.css">
+    <style>
+        /* Estilos para Panel Móvil */
+        .mobile-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid var(--neon-cyan);
+            border-radius: 15px;
+            padding: 20px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .mobile-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: linear-gradient(135deg, var(--dark-surface), var(--dark-card));
+            border: 1px solid var(--neon-green);
+            border-radius: 8px;
+        }
+
+        .mobile-logo {
+            color: var(--neon-green);
+            font-weight: bold;
+            font-size: 1.1em;
+            text-shadow: 0 0 10px var(--neon-green);
+        }
+
+        .machine-info {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .mobile-connection-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .mobile-connection-status.connected {
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid var(--neon-green);
+            color: var(--neon-green);
+        }
+
+        .mobile-connection-status.disconnected {
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
+        }
+
+        .qr-display {
+            text-align: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .qr-code {
+            width: 120px;
+            height: 120px;
+            background: white;
+            margin: 0 auto 10px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+            color: #000;
+            font-weight: bold;
+        }
+
+        .qr-instructions {
+            color: var(--text-secondary);
+            font-size: 0.8em;
+        }
+
+        .mobile-controls {
+            margin-top: 15px;
+        }
+
+        .mobile-btn {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: linear-gradient(135deg, var(--neon-green), #00d4aa);
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0, 255, 136, 0.4);
+        }
+
+        .mobile-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .mobile-btn-secondary {
+            background: linear-gradient(135deg, var(--neon-cyan), #00aaff);
+        }
+
+        .mobile-btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+
+        .mobile-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .mobile-stat {
+            text-align: center;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            border: 1px solid var(--neon-green);
+        }
+
+        .mobile-stat-value {
+            color: var(--neon-green);
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .mobile-stat-label {
+            color: var(--text-secondary);
+            font-size: 0.7em;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-panel {
+                position: relative;
+                top: 0;
+                right: 0;
+                width: 100%;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Indicador de estado de conexión -->
+    <div id="connection-status" class="connection-status offline">
+        <span class="status-icon">⚫</span>
+        <span class="status-text">Backend Offline</span>
+    </div>
+
+    <!-- Panel de Control Móvil - Solo visible cuando NO hay juego activo -->
+    <div id="mobile-control-panel" class="mobile-panel" style="display: none;">
+        <div class="mobile-header">
+            <div class="mobile-logo">📱 Control Móvil</div>
+            <div class="machine-info">Máquina: <span id="machine-display">CYBER-001</span></div>
+        </div>
+
+        <div class="mobile-connection-status disconnected" id="mobile-connection-status">
+            <span>🔴</span>
+            <span>Esperando conexión móvil...</span>
+        </div>
+
+        <div class="qr-display" id="qr-display">
+            <div class="qr-code">
+                <div>QR CODE<br>CYBER-001</div>
+            </div>
+            <div class="qr-instructions">
+                Escanea con la app móvil para conectarte
+            </div>
+        </div>
+
+        <div class="mobile-controls" id="mobile-controls" style="display: none;">
+            <button class="mobile-btn" id="mobile-start-btn">🚀 Iniciar desde Móvil</button>
+            <button class="mobile-btn mobile-btn-secondary" id="mobile-pause-btn" disabled>⏸️ Pausar</button>
+            <button class="mobile-btn mobile-btn-danger" id="mobile-end-btn" disabled>🏁 Terminar</button>
+            
+            <div class="mobile-stats">
+                <div class="mobile-stat">
+                    <div class="mobile-stat-value" id="mobile-score-display">0</div>
+                    <div class="mobile-stat-label">Puntuación</div>
+                </div>
+                <div class="mobile-stat">
+                    <div class="mobile-stat-value" id="mobile-throws-display">6</div>
+                    <div class="mobile-stat-label">Tiros restantes</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pantalla de Inicio -->
+    <div id="start-screen" class="screen active">
+        <div class="start-container">
+            <!-- Número de Máquina -->
+            <div class="machine-number">
+                Máquina #001
+            </div>
+            
+            <!-- Logo Central -->
+            <div class="main-logo-container">
+                <img src="logo boliranas.png" alt="Logo Goriodanas" class="main-logo">
+            </div>
+            
+            <!-- Botones de Acción -->
+            <div class="action-buttons">
+                <button class="action-btn primary-btn" id="start-game-btn" onclick="goToSetupScreen()">
+                    🎮 INICIAR PARTIDA
+                </button>
+                <button class="action-btn secondary-btn" id="join-game-btn" onclick="goToJoinScreen()">
+                    🔗 UNIRME
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pantalla de Configuración -->
+    <div id="setup-screen" class="screen">
+        <div class="setup-container">
+            <h1>🌟 CYBER SAPO</h1>
+            
+            <div class="config-grid">
+                <!-- Columna Izquierda - Configuración del Juego -->
+                <div class="config-column config-left">
+                    <h2 class="column-title">⚙️ CONFIGURACIÓN</h2>
+                    
+                    <div class="config-section" id="game-type-section">
+                        <label for="game-type">Tipo de Juego:</label>
+                        <div class="keyboard-selector active" id="game-type-selector">
+                            <span id="game-type-value">Individual</span>
+                            <div class="selector-indicator">◄ TAB | ESPACIO ►</div>
+                        </div>
+                    </div>
+
+                    <div class="config-section" id="players-section">
+                        <label for="num-players" id="players-label">Número de Jugadores:</label>
+                        <div class="keyboard-selector" id="players-selector">
+                            <span id="players-value">2</span> <span id="players-unit">jugadores</span>
+                            <div class="selector-indicator">◄ TAB | ESPACIO ►</div>
+                        </div>
+                    </div>
+
+                    <div class="config-section" id="points-section">
+                        <label for="max-points">Puntaje Máximo:</label>
+                        <div class="keyboard-selector" id="points-selector">
+                            <span id="points-value">1000</span> puntos
+                            <div class="selector-indicator">◄ TAB | ESPACIO ►</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha - Sistema de Créditos -->
+                <div class="config-column config-right">
+                    <h2 class="column-title">💰 SISTEMA DE PAGO</h2>
+                    
+                    <div class="credits-info">
+                        <div class="config-section" id="credits-required-section">
+                            <label for="credits-required">Créditos Requeridos:</label>
+                            <div class="credits-display credits-required">
+                                <span id="credits-required-value">2</span>
+                                <small>créditos</small>
+                            </div>
+                        </div>
+
+                        <div class="config-section" id="credits-inserted-section">
+                            <label for="credits-inserted">Créditos Ingresados:</label>
+                            <div class="keyboard-selector" id="credits-selector">
+                                <span id="credits-inserted-value">0</span> créditos
+                                <div class="selector-indicator">◄ TAB | M para agregar ►</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="config-section start-section" id="start-section">
+                        <div class="keyboard-selector start-button" id="start-selector">
+                            <span id="start-button-text">❌ CRÉDITOS INSUFICIENTES</span>
+                            <div class="selector-indicator">◄ TAB | ESPACIO para iniciar ►</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pantalla de Juego -->
+    <div id="game-screen" class="screen">
+        <div class="game-container">
+            <!-- Columna Izquierda - Jugadores -->
+            <div class="players-column">
+                <h2>JUGADORES</h2>
+                <div id="players-list"></div>
+            </div>
+
+            <!-- Columna Central - Jugador Actual -->
+            <div class="current-player-column">
+                <div class="current-player-info">
+                    <div class="player-name" id="current-player-name">Ballistick</div>
+                    <div class="player-avatar" id="current-player-avatar">
+                        <img src="" alt="Avatar" id="player-avatar-img" style="display: none;">
+                        <div class="avatar-placeholder">👤</div>
+                    </div>
+                    <div class="player-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">TIRO</span>
+                            <span class="stat-value" id="current-throw">1/6</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">PUNTOS</span>
+                            <span class="stat-value" id="current-score">152</span>
+                        </div>
+                    </div>
+                    <div class="throws-info">
+                        <span class="throws-label">TIROS REALIZADOS</span>
+                        <div class="throws-display" id="throws-display">
+                            <!-- Los tiros se mostrarán aquí dinámicamente -->
+                            <div class="throw-circle"></div>
+                            <div class="throw-circle"></div>
+                            <div class="throw-circle"></div>
+                            <div class="throw-circle"></div>
+                            <div class="throw-circle"></div>
+                            <div class="throw-circle"></div>
+                            <div class="throw-circle"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Derecha - Tablero -->
+            <div class="board-column">
+                <div class="goal-info">
+                    <h2>META</h2>
+                    <div id="goal-points">100 PUNTOS</div>
+                </div>
+
+                <div class="game-board">
+                    <div class="holes-grid">
+                        <div class="hole" data-value="5" data-key="q">5<br><kbd>Q</kbd></div>
+                        <div class="hole" data-value="8" data-key="w">8<br><kbd>W</kbd></div>
+                        <div class="hole" data-value="12" data-key="e">12<br><kbd>E</kbd></div>
+                        <div class="hole" data-value="15" data-key="r">15<br><kbd>R</kbd></div>
+                        
+                        <div class="hole" data-value="3" data-key="a">3<br><kbd>A</kbd></div>
+                        <div class="hole" data-value="10" data-key="s">10<br><kbd>S</kbd></div>
+                        <div class="hole rana" data-value="100" data-key="d">100<br><small>RANA</small><br><kbd>D</kbd></div>
+                        <div class="hole" data-value="20" data-key="f">20<br><kbd>F</kbd></div>
+                        
+                        <div class="hole" data-value="7" data-key="z">7<br><kbd>Z</kbd></div>
+                        <div class="hole" data-value="18" data-key="x">18<br><kbd>X</kbd></div>
+                        <div class="hole ranita" data-value="50" data-key="c">50<br><small>RANITA</small><br><kbd>C</kbd></div>
+                        <div class="hole" data-value="25" data-key="v">25<br><kbd>V</kbd></div>
+                        
+                        <div class="hole" data-value="6" data-key="t">6<br><kbd>T</kbd></div>
+                        <div class="hole" data-value="14" data-key="g">14<br><kbd>G</kbd></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botón Nueva Partida eliminado -->
+    </div>
+
+    <!-- Modal de Victoria -->
+    <div id="winner-modal" class="modal">
+        <div class="modal-content">
+            <h2>¡GANADOR!</h2>
+            <div id="winner-name">Jugador 1</div>
+            <div id="winner-score">100 puntos</div>
+            <button id="play-again" class="btn-primary">Jugar de Nuevo</button>
+        </div>
+    </div>
+
+    <!-- Pantalla de Unirse -->
+    <div id="join-screen" class="screen">
+        <div class="join-container">
+            <div class="join-header">
+                <h1>🔗 UNIRSE A PARTIDA</h1>
+                <button class="back-btn" onclick="goToStartScreen()">← Volver</button>
+            </div>
+            
+            <!-- Configuración del Juego -->
+            <div class="join-config-section">
+                <h2>⚙️ CONFIGURACIÓN DE LA PARTIDA</h2>
+                <div class="join-config-grid">
+                    <div class="join-config-item">
+                        <span class="config-label">Tipo de Juego:</span>
+                        <span class="config-value" id="join-game-type">Individual</span>
+                    </div>
+                    <div class="join-config-item">
+                        <span class="config-label">Jugadores:</span>
+                        <span class="config-value" id="join-players">2 jugadores</span>
+                    </div>
+                    <div class="join-config-item">
+                        <span class="config-label">Puntaje Máximo:</span>
+                        <span class="config-value" id="join-points">1000 puntos</span>
+                    </div>
+                    <div class="join-config-item">
+                        <span class="config-label">Créditos:</span>
+                        <span class="config-value" id="join-credits">2 créditos</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de Jugadores -->
+            <div class="players-section">
+                <h2>👥 JUGADORES EN LA PARTIDA</h2>
+                <div class="players-list" id="players-list">
+                    <!-- Jugador ejemplo 1 -->
+                    <div class="player-card" onclick="changeCurrentPlayer(0)">
+                        <div class="player-avatar">
+                            <img src="https://via.placeholder.com/80x80/00ffff/000000?text=P1" alt="Player 1">
+                        </div>
+                        <div class="player-info">
+                            <div class="player-name">BALLISTICK</div>
+                            <div class="player-score">589 pts</div>
+                            <div class="player-throws">0 tiros</div>
+                            <div class="player-throws-display">
+                                <!-- Tiros del jugador se mostrarán aquí -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="player-card" onclick="changeCurrentPlayer(1)">
+                        <div class="player-avatar">
+                            <img src="https://via.placeholder.com/80x80/ff6b35/ffffff?text=P2" alt="Player 2">
+                        </div>
+                        <div class="player-info">
+                            <div class="player-name">BALLISTICK</div>
+                            <div class="player-score">303 pts</div>
+                            <div class="player-throws">3 tiros</div>
+                            <div class="player-throws-display">
+                                <!-- Tiros del jugador se mostrarán aquí -->
+                            </div>
+                        </div>
+                        <div class="player-status online">En línea</div>
+                    </div>
+
+                    <!-- Slot vacío -->
+                    <div class="player-card empty-slot">
+                        <div class="player-avatar empty">
+                            <div class="empty-avatar">+</div>
+                        </div>
+                        <div class="player-info">
+                            <div class="player-name">Esperando jugador...</div>
+                            <div class="player-id">Slot disponible</div>
+                            <div class="player-level">-</div>
+                        </div>
+                        <div class="player-status waiting">Esperando</div>
+                    </div>
+                </div>
+
+                <!-- Botón de acción -->
+                <div class="join-actions">
+                    <button class="action-btn primary-btn" onclick="joinGame()">
+                        🚀 UNIRSE A LA PARTIDA
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="juego-neon.js"></script>
+    
+    <script>
+    // CAPTURA SUPER AGRESIVA DE TECLAS - ÚLTIMO RECURSO
+    window.addEventListener('load', function() {
+        console.log('🚨 CAPTURA SUPER AGRESIVA ACTIVADA');
+        
+        // Capturar en window con máxima prioridad
+        window.addEventListener('keydown', function(e) {
+            console.log(`🚨 WINDOW KEYDOWN: "${e.key}"`);
+            
+            if (window.gameState && window.gameState.gameStarted) {
+                const key = e.key.toLowerCase();
+                console.log(`🎮 JUEGO DETECTADO - Procesando: ${key}`);
+                
+                const keyToHole = {
+                    'q': 5, 'w': 8, 'e': 12, 'r': 15,
+                    'a': 3, 's': 10, 'd': 100, 'f': 20,
+                    'z': 7, 'x': 18, 'c': 50, 'v': 25,
+                    't': 30, 'g': 40
+                };
+                
+                if (keyToHole[key]) {
+                    console.log(`🎯 FORZANDO PUNTUACIÓN: ${key} = ${keyToHole[key]}`);
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    
+                    // Llamar addScore directamente
+                    if (window.addScore) {
+                        window.addScore(keyToHole[key]);
+                    }
+                    return false;
+                }
+            }
+        }, true);
+        
+        // También capturar keyup por si acaso
+        window.addEventListener('keyup', function(e) {
+            if (window.gameState && window.gameState.gameStarted) {
+                console.log(`🎮 KEYUP en juego: ${e.key}`);
+            }
+        }, true);
+    });
+    </script>
+    
+    <script>
+    // Script adicional para capturar teclas de forma más agresiva
+    document.addEventListener('DOMContentLoaded', function() {
+        // Capturar todas las teclas antes que cualquier otro elemento
+        document.addEventListener('keydown', function(e) {
+            console.log(`🔥 CAPTURA AGRESIVA: Tecla "${e.key}" detectada`);
+            
+            // Si estamos en configuración, manejar directamente aquí
+            if (configState && configState.inSetupMode) {
+                console.log('🎯 Manejando tecla en configuración directamente');
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                
+                if (e.key === 'Tab') {
+                    console.log('📋 TAB - Cambiando selector');
+                    configState.currentSelector = (configState.currentSelector + 1) % 5;
+                    updateConfigDisplay();
+                } else if (e.key === ' ') {
+                    console.log('🚀 ESPACIO - Cambiando valor');
+                    handleSpaceInConfig();
+                } else if (e.key.toLowerCase() === 'm') {
+                    console.log('💰 M - Agregando crédito');
+                    configState.creditsInserted++;
+                    updateConfigDisplay();
+                }
+                return false;
+            }
+            
+            // Si estamos en el juego, manejar teclas de puntuación
+            if (gameState && gameState.gameStarted) {
+                console.log('🎮 Manejando tecla en juego directamente');
+                const key = e.key.toLowerCase();
+                
+                // Teclas de puntuación
+                const keyToHole = {
+                    'q': 5, 'w': 8, 'e': 12, 'r': 15,
+                    'a': 3, 's': 10, 'd': 100, 'f': 20,
+                    'z': 7, 'x': 18, 'c': 50, 'v': 25,
+                    't': 30, 'g': 40
+                };
+                
+                if (keyToHole.hasOwnProperty(key)) {
+                    console.log(`🎯 Tecla de puntuación: ${key} = ${keyToHole[key]} puntos`);
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    addScore(keyToHole[key]);
+                    return false;
+                }
+                
+                // Tecla Enter o Espacio para cambiar jugador
+                if (e.key === 'Enter' || e.key === ' ') {
+                    console.log('👥 Cambiando de jugador');
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    changeToNextPlayer();
+                    return false;
+                }
+            }
+        }, true);
+    });
+    
+    function handleSpaceInConfig() {
+        if (configState.currentSelector === 0) {
+            configState.gameType = (configState.gameType + 1) % gameTypes.length;
+        } else if (configState.currentSelector === 1) {
+            configState.numPlayers++;
+            if (configState.numPlayers > 20) configState.numPlayers = 2;
+        } else if (configState.currentSelector === 2) {
+            configState.maxPoints += 500;
+            if (configState.maxPoints > 5000) configState.maxPoints = 1000;
+        } else if (configState.currentSelector === 4) {
+            if (canStartGame()) startGame();
+            else alert('¡Créditos insuficientes! Presiona M para agregar créditos.');
+        }
+        updateConfigDisplay();
+    }
+    </script>
+</body>
+</html>

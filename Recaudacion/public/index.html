@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Recaudación - Dashboard</title>
+    
+    <!-- CSS Framework y estilos -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-color: #1f2937;
+            --light-bg: #f8fafc;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            color: var(--primary-color) !important;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .metric-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .growth-positive {
+            color: var(--success-color);
+        }
+
+        .growth-negative {
+            color: var(--danger-color);
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .status-active { background-color: var(--success-color); }
+        .status-inactive { background-color: #6b7280; }
+        .status-maintenance { background-color: var(--warning-color); }
+        .status-broken { background-color: var(--danger-color); }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+
+        .filter-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .table-responsive {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn-refresh {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navegación -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-chart-line me-2"></i>
+                Sistema de Recaudación
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text">
+                    <i class="fas fa-clock me-1"></i>
+                    <span id="currentTime"></span>
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <!-- Filtros -->
+        <div class="filter-section">
+            <div class="row align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Región</label>
+                    <select class="form-select" id="filtroRegion">
+                        <option value="">Todas las regiones</option>
+                        <option value="Norte">Norte</option>
+                        <option value="Sur">Sur</option>
+                        <option value="Este">Este</option>
+                        <option value="Oeste">Oeste</option>
+                        <option value="Centro">Centro</option>
+                        <option value="Metropolitana">Metropolitana</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Fecha Inicio</label>
+                    <input type="date" class="form-control" id="fechaInicio">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Fecha Fin</label>
+                    <input type="date" class="form-control" id="fechaFin">
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-primary w-100" onclick="aplicarFiltros()">
+                        <i class="fas fa-filter me-2"></i>Aplicar Filtros
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Métricas Principales -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="metric-card p-4">
+                    <div class="metric-label">Pulsos Hoy</div>
+                    <div class="metric-value text-primary" id="pulsosHoy">-</div>
+                    <div class="small">
+                        <span id="crecimientoPulsos" class="growth-positive">
+                            <i class="fas fa-arrow-up"></i> 0%
+                        </span>
+                        vs ayer
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card p-4">
+                    <div class="metric-label">Ingresos Hoy</div>
+                    <div class="metric-value text-success" id="ingresosHoy">-</div>
+                    <div class="small">
+                        <span id="crecimientoIngresos" class="growth-positive">
+                            <i class="fas fa-arrow-up"></i> 0%
+                        </span>
+                        vs ayer
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card p-4">
+                    <div class="metric-label">Máquinas Activas</div>
+                    <div class="metric-value text-info" id="maquinasActivas">-</div>
+                    <div class="small">
+                        <span id="totalMaquinas">de 0 total</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card p-4">
+                    <div class="metric-label">Promedio por Máquina</div>
+                    <div class="metric-value text-warning" id="promedioPorMaquina">-</div>
+                    <div class="small">ingresos diarios</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficas -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="chart-container">
+                    <h5 class="mb-3">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Tendencia de Ingresos (Últimos 7 días)
+                    </h5>
+                    <canvas id="chartTendencia" height="100"></canvas>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="chart-container">
+                    <h5 class="mb-3">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        Estado de Máquinas
+                    </h5>
+                    <canvas id="chartEstados" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h5 class="mb-3">
+                        <i class="fas fa-clock me-2"></i>
+                        Distribución por Horas
+                    </h5>
+                    <canvas id="chartHorario" height="150"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h5 class="mb-3">
+                        <i class="fas fa-map-marker-alt me-2"></i>
+                        Ingresos por Región
+                    </h5>
+                    <canvas id="chartRegiones" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de Máquinas Top -->
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>
+                            <i class="fas fa-trophy me-2"></i>
+                            Top Máquinas por Rendimiento
+                        </th>
+                        <th>Región</th>
+                        <th>Pulsos Hoy</th>
+                        <th>Ingresos Hoy</th>
+                        <th>Estado</th>
+                        <th>Última Actividad</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaTopMaquinas">
+                    <tr>
+                        <td colspan="6" class="text-center">
+                            <div class="loading">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Botón de actualización -->
+    <button class="btn btn-primary btn-refresh" onclick="cargarDatos()" title="Actualizar datos">
+        <i class="fas fa-sync-alt"></i>
+    </button>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    
+    <script>
+        // Variables globales
+        let charts = {};
+        let datosActuales = {};
+
+        // Inicializar aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            inicializarFechas();
+            cargarDatos();
+            actualizarReloj();
+            setInterval(actualizarReloj, 1000);
+            setInterval(cargarDatos, 30000); // Actualizar cada 30 segundos
+        });
+
+        // Configurar fechas por defecto
+        function inicializarFechas() {
+            const hoy = new Date();
+            const hace7Dias = new Date(hoy.getTime() - 7 * 24 * 60 * 60 * 1000);
+            
+            document.getElementById('fechaFin').value = hoy.toISOString().split('T')[0];
+            document.getElementById('fechaInicio').value = hace7Dias.toISOString().split('T')[0];
+        }
+
+        // Actualizar reloj
+        function actualizarReloj() {
+            const ahora = new Date();
+            document.getElementById('currentTime').textContent = 
+                ahora.toLocaleString('es-ES', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+        }
+
+        // Cargar datos del dashboard
+        async function cargarDatos() {
+            try {
+                const response = await fetch('/api/analytics/dashboard');
+                const datos = await response.json();
+                
+                if (response.ok) {
+                    datosActuales = datos;
+                    actualizarMetricas(datos.metricas);
+                    actualizarGraficas(datos.graficas);
+                    actualizarEstadoMaquinas(datos.maquinas);
+                    await cargarTopMaquinas();
+                } else {
+                    console.error('Error cargando datos:', datos.error);
+                }
+            } catch (error) {
+                console.error('Error de conexión:', error);
+            }
+        }
+
+        // Actualizar métricas principales
+        function actualizarMetricas(metricas) {
+            document.getElementById('pulsosHoy').textContent = metricas.hoy.pulsos.toLocaleString();
+            document.getElementById('ingresosHoy').textContent = '€' + metricas.hoy.ingresos.toFixed(2);
+            document.getElementById('maquinasActivas').textContent = metricas.hoy.maquinasActivas;
+            
+            // Actualizar crecimiento
+            const crecimientoPulsos = document.getElementById('crecimientoPulsos');
+            const crecimientoIngresos = document.getElementById('crecimientoIngresos');
+            
+            actualizarCrecimiento(crecimientoPulsos, metricas.hoy.crecimientoPulsos);
+            actualizarCrecimiento(crecimientoIngresos, metricas.hoy.crecimientoIngresos);
+        }
+
+        // Actualizar indicadores de crecimiento
+        function actualizarCrecimiento(elemento, valor) {
+            const icono = valor >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+            const clase = valor >= 0 ? 'growth-positive' : 'growth-negative';
+            
+            elemento.className = clase;
+            elemento.innerHTML = `<i class="fas ${icono}"></i> ${Math.abs(valor).toFixed(1)}%`;
+        }
+
+        // Actualizar gráficas
+        function actualizarGraficas(graficas) {
+            // Gráfica de tendencia
+            actualizarGraficaTendencia(graficas.tendencia7Dias);
+            
+            // Gráfica de distribución horaria
+            actualizarGraficaHoraria(graficas.distribucionHoraria);
+        }
+
+        // Gráfica de tendencia de 7 días
+        function actualizarGraficaTendencia(datos) {
+            const ctx = document.getElementById('chartTendencia').getContext('2d');
+            
+            if (charts.tendencia) {
+                charts.tendencia.destroy();
+            }
+
+            const labels = datos.map(d => moment(d.fecha).format('DD/MM'));
+            const ingresos = datos.map(d => d.ingresos);
+            const pulsos = datos.map(d => d.pulsos);
+
+            charts.tendencia = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Ingresos (€)',
+                        data: ingresos,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4,
+                        yAxisID: 'y'
+                    }, {
+                        label: 'Pulsos',
+                        data: pulsos,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: { display: true, text: 'Ingresos (€)' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: { display: true, text: 'Pulsos' },
+                            grid: { drawOnChartArea: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gráfica de distribución horaria
+        function actualizarGraficaHoraria(datos) {
+            const ctx = document.getElementById('chartHorario').getContext('2d');
+            
+            if (charts.horario) {
+                charts.horario.destroy();
+            }
+
+            const labels = datos.map(d => d.hora + ':00');
+            const pulsos = datos.map(d => d.pulsos);
+
+            charts.horario = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Pulsos por Hora',
+                        data: pulsos,
+                        backgroundColor: 'rgba(37, 99, 235, 0.6)',
+                        borderColor: '#2563eb',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Número de Pulsos' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Hora del Día' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Actualizar estado de máquinas
+        function actualizarEstadoMaquinas(maquinas) {
+            const ctx = document.getElementById('chartEstados').getContext('2d');
+            
+            if (charts.estados) {
+                charts.estados.destroy();
+            }
+
+            const estados = maquinas.distribucionEstados;
+            const labels = estados.map(e => e._id);
+            const datos = estados.map(e => e.cantidad);
+            const colores = {
+                'Activa': '#10b981',
+                'Inactiva': '#6b7280',
+                'Mantenimiento': '#f59e0b',
+                'Averiada': '#ef4444'
+            };
+
+            charts.estados = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: datos,
+                        backgroundColor: labels.map(l => colores[l] || '#6b7280')
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('totalMaquinas').textContent = `de ${maquinas.total} total`;
+        }
+
+        // Cargar top máquinas
+        async function cargarTopMaquinas() {
+            try {
+                const response = await fetch('/api/analytics/maquinas/ranking?limite=10');
+                const datos = await response.json();
+                
+                if (response.ok) {
+                    actualizarTablaTopMaquinas(datos.ranking);
+                }
+            } catch (error) {
+                console.error('Error cargando top máquinas:', error);
+            }
+        }
+
+        // Actualizar tabla de top máquinas
+        function actualizarTablaTopMaquinas(ranking) {
+            const tbody = document.getElementById('tablaTopMaquinas');
+            
+            if (ranking.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay datos disponibles</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = ranking.map((maquina, index) => `
+                <tr>
+                    <td>
+                        <strong>#${index + 1} ${maquina._id}</strong>
+                        <br><small class="text-muted">${maquina.nombre || 'Sin nombre'}</small>
+                    </td>
+                    <td>${maquina.region}</td>
+                    <td>${maquina.totalPulsos.toLocaleString()}</td>
+                    <td>€${maquina.totalIngresos.toFixed(2)}</td>
+                    <td>
+                        <span class="status-indicator status-active"></span>
+                        Activa
+                    </td>
+                    <td>${moment(maquina.ultimaActividad).fromNow()}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Aplicar filtros
+        function aplicarFiltros() {
+            // Aquí implementarías la lógica de filtros
+            console.log('Aplicando filtros...');
+            cargarDatos();
+        }
+    </script>
+</body>
+</html>

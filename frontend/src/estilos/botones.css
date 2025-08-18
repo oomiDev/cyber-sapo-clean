@@ -1,0 +1,159 @@
+/**
+ * CYBER SAPO - Estilos para Botones
+ * 
+ * EXPLICACIÓN PARA NIÑOS:
+ * Este archivo tiene todos los estilos para los botones del juego.
+ * Los botones son como los "interruptores" que presionas para hacer cosas.
+ * Aquí decidimos cómo se ven y qué pasa cuando los tocas.
+ */
+
+/* PASO 1: Estilo base para todos los botones */
+.boton {
+    /* Apariencia básica */
+    padding: 15px 30px;                    /* Espacio interno (arriba/abajo, izquierda/derecha) */
+    font-size: 1.1em;                      /* Texto un poco más grande */
+    font-weight: bold;                     /* Texto en negrita */
+    font-family: inherit;                  /* Usar la misma fuente que el resto */
+    
+    /* Bordes y forma */
+    border: none;                          /* Sin borde por defecto */
+    border-radius: 10px;                   /* Esquinas redondeadas */
+    
+    /* Colores */
+    background: linear-gradient(135deg, var(--color-verde), #00d4aa);
+    color: #000000;                        /* Texto negro para que se vea bien */
+    
+    /* Comportamiento */
+    cursor: pointer;                       /* Mostrar manita cuando pasas el mouse */
+    transition: all 0.3s ease;            /* Cambios suaves */
+    
+    /* Tamaño */
+    width: 100%;                           /* Ocupar todo el ancho disponible */
+    margin: 10px 0;                        /* Espacio arriba y abajo */
+}
+
+/* PASO 2: Qué pasa cuando pasas el mouse sobre un botón */
+.boton:hover {
+    transform: translateY(-2px);           /* Subir un poquito */
+    box-shadow: 0 5px 15px rgba(0, 255, 136, 0.4);  /* Sombra brillante */
+}
+
+/* PASO 3: Qué pasa cuando presionas un botón */
+.boton:active {
+    transform: translateY(0);              /* Volver a la posición normal */
+    box-shadow: 0 2px 5px rgba(0, 255, 136, 0.2);   /* Sombra más pequeña */
+}
+
+/* PASO 4: Botones de diferentes colores para diferentes acciones */
+
+/* Botón principal (verde) - para acciones importantes */
+.boton-principal {
+    background: linear-gradient(135deg, var(--color-verde), #00d4aa);
+    color: #000000;
+}
+
+/* Botón secundario (azul) - para acciones menos importantes */
+.boton-secundario {
+    background: linear-gradient(135deg, var(--color-cyan), #00aaff);
+    color: #000000;
+}
+
+/* Botón de peligro (rojo) - para acciones peligrosas como borrar */
+.boton-peligro {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: #ffffff;
+}
+
+/* Botón de éxito (verde más brillante) - para cuando algo sale bien */
+.boton-exito {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: #ffffff;
+}
+
+/* Botón de advertencia (amarillo/naranja) - para avisos */
+.boton-advertencia {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: #000000;
+}
+
+/* PASO 5: Botones pequeños para espacios reducidos */
+.boton-pequeno {
+    padding: 8px 16px;                     /* Menos espacio interno */
+    font-size: 0.9em;                      /* Texto más pequeño */
+    width: auto;                           /* No ocupar todo el ancho */
+}
+
+/* PASO 6: Botones grandes para acciones muy importantes */
+.boton-grande {
+    padding: 20px 40px;                    /* Más espacio interno */
+    font-size: 1.3em;                      /* Texto más grande */
+}
+
+/* PASO 7: Botón deshabilitado (cuando no se puede usar) */
+.boton:disabled {
+    background: #666666;                   /* Gris */
+    color: #999999;                        /* Texto gris claro */
+    cursor: not-allowed;                   /* Mostrar que no se puede usar */
+    transform: none;                       /* No moverse */
+    box-shadow: none;                      /* Sin sombra */
+}
+
+.boton:disabled:hover {
+    transform: none;                       /* No subir cuando pasas el mouse */
+    box-shadow: none;                      /* Sin efectos */
+}
+
+/* PASO 8: Botones especiales para el juego */
+
+/* Botón para agregar monedas */
+.boton-moneda {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #000000;
+    position: relative;
+}
+
+.boton-moneda::before {
+    content: '💰';                         /* Emoji de moneda */
+    margin-right: 8px;
+}
+
+/* Botón para iniciar juego */
+.boton-iniciar {
+    background: linear-gradient(135deg, var(--color-verde), #00ff88);
+    color: #000000;
+    font-size: 1.2em;
+    animation: pulsoSuave 2s ease-in-out infinite;
+}
+
+@keyframes pulsoSuave {
+    0%, 100% { 
+        box-shadow: 0 0 10px rgba(0, 255, 136, 0.5); 
+    }
+    50% { 
+        box-shadow: 0 0 20px rgba(0, 255, 136, 0.8); 
+    }
+}
+
+/* PASO 9: Grupos de botones */
+.grupo-botones {
+    display: flex;                         /* Poner botones en fila */
+    gap: 10px;                            /* Espacio entre botones */
+    flex-wrap: wrap;                      /* Saltar a nueva línea si no caben */
+}
+
+.grupo-botones .boton {
+    flex: 1;                              /* Todos los botones del mismo tamaño */
+    width: auto;                          /* No ocupar todo el ancho individual */
+}
+
+/* PASO 10: Botones circulares para acciones rápidas */
+.boton-circular {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;                   /* Completamente redondo */
+    padding: 0;                           /* Sin espacio interno extra */
+    display: flex;
+    align-items: center;                  /* Centrar verticalmente */
+    justify-content: center;              /* Centrar horizontalmente */
+    font-size: 1.2em;
+}

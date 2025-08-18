@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYBER SAPO - Panel de Administración</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/analytics-admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <div class="header-left">
+                <h1 class="neon-title">🔧 CYBER SAPO ADMIN</h1>
+                <p class="subtitle">Panel de Control y Estadísticas</p>
+            </div>
+            <div class="header-right">
+                <button id="refresh-all" class="admin-btn primary">🔄 Actualizar Todo</button>
+                <a href="index.html" class="admin-btn secondary">← Volver al Inicio</a>
+            </div>
+        </header>
+
+        <!-- Estadísticas Generales -->
+        <section class="stats-overview">
+            <h2 class="section-title">📊 Resumen General</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🎮</div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="total-machines">-</div>
+                        <div class="stat-label">Máquinas Totales</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🟢</div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="available-machines">-</div>
+                        <div class="stat-label">Disponibles</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🟡</div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="occupied-machines">-</div>
+                        <div class="stat-label">Ocupadas</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🔴</div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="full-machines">-</div>
+                        <div class="stat-label">Completas</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⚫</div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="offline-machines">-</div>
+                        <div class="stat-label">Fuera de Línea</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="total-players">-</div>
+                        <div class="stat-label">Jugadores Activos</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Gestión de Ubicaciones -->
+        <section class="locations-management">
+            <div class="locations-header">
+                <h2 class="section-title">🏢 Gestión de Ubicaciones</h2>
+                <div class="locations-stats" id="locations-stats">
+                    <div class="stat-mini">
+                        <span class="stat-mini-number" id="total-locations">-</span>
+                        <span class="stat-mini-label">Total</span>
+                    </div>
+                    <div class="stat-mini">
+                        <span class="stat-mini-number" id="active-countries">-</span>
+                        <span class="stat-mini-label">Países</span>
+                    </div>
+                    <div class="stat-mini">
+                        <span class="stat-mini-number" id="business-types-count">-</span>
+                        <span class="stat-mini-label">Tipos</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Filtros Avanzados -->
+            <div class="locations-filters">
+                <div class="filters-row">
+                    <div class="filter-group">
+                        <label>🔍 Buscar:</label>
+                        <input type="text" id="location-search" placeholder="Nombre, dirección o ciudad...">
+                    </div>
+                    <div class="filter-group">
+                        <label>🌍 País:</label>
+                        <select id="country-filter">
+                            <option value="">Todos los países</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>🏙️ Ciudad:</label>
+                        <select id="city-filter">
+                            <option value="">Todas las ciudades</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>🏢 Tipo:</label>
+                        <select id="business-type-filter">
+                            <option value="">Todos los tipos</option>
+                        </select>
+                    </div>
+                    <div class="filter-actions">
+                        <button id="apply-filters" class="admin-btn primary">🔍 Filtrar</button>
+                        <button id="clear-filters" class="admin-btn secondary">🗑️ Limpiar</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Acciones Principales -->
+            <div class="control-actions">
+                <button id="add-location" class="admin-btn success">➕ Agregar Ubicación</button>
+                <button id="add-business-type" class="admin-btn info">🏷️ Nuevo Tipo</button>
+                <button id="refresh-locations" class="admin-btn primary">🔄 Actualizar</button>
+                <button id="export-locations" class="admin-btn warning">📊 Exportar</button>
+            </div>
+            
+            <!-- Lista de Ubicaciones -->
+            <div class="locations-container">
+                <div class="locations-toolbar">
+                    <div class="view-options">
+                        <button id="grid-view" class="view-btn active" title="Vista en cuadrícula">⊞</button>
+                        <button id="list-view" class="view-btn" title="Vista en lista">☰</button>
+                    </div>
+                    <div class="pagination-info" id="pagination-info">
+                        Mostrando 0 de 0 ubicaciones
+                    </div>
+                </div>
+                
+                <div id="locations-list" class="locations-grid">
+                    <div class="loading-spinner">🔄 Cargando ubicaciones...</div>
+                </div>
+                
+                <!-- Paginación -->
+                <div class="pagination" id="pagination">
+                    <button id="prev-page" class="pagination-btn" disabled>← Anterior</button>
+                    <div class="pagination-pages" id="pagination-pages"></div>
+                    <button id="next-page" class="pagination-btn" disabled>Siguiente →</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Control de Máquinas -->
+        <section class="machines-control">
+            <h2 class="section-title">🎮 Control de Máquinas</h2>
+            <div class="control-actions">
+                <button id="add-machine" class="admin-btn success">➕ Agregar Máquina</button>
+                <button id="reset-all" class="admin-btn warning">🔄 Reiniciar Todas</button>
+                <button id="export-data" class="admin-btn info">📊 Exportar Datos</button>
+            </div>
+            <div id="machines-admin-list" class="machines-admin-grid">
+                <!-- Las máquinas se cargarán aquí -->
+            </div>
+        </section>
+
+        <!-- Estadísticas Detalladas -->
+        <section class="detailed-stats">
+            <h2 class="section-title">📈 Estadísticas Detalladas</h2>
+            <div class="stats-tabs">
+                <button class="tab-btn active" data-tab="games">🎯 Partidas</button>
+                <button class="tab-btn" data-tab="revenue">💰 Ingresos</button>
+                <button class="tab-btn" data-tab="usage">📊 Uso</button>
+            </div>
+            
+            <div id="games-tab" class="tab-content active">
+                <div class="games-stats">
+                    <div class="recent-games">
+                        <h3>🕒 Partidas Recientes</h3>
+                        <div id="recent-games-list" class="games-list">
+                            <!-- Partidas recientes -->
+                        </div>
+                    </div>
+                    <div class="games-summary">
+                        <h3>📊 Resumen de Partidas</h3>
+                        <div class="summary-grid">
+                            <div class="summary-item">
+                                <span class="summary-label">Partidas Hoy:</span>
+                                <span class="summary-value" id="games-today">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Partidas Esta Semana:</span>
+                                <span class="summary-value" id="games-week">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Puntuación Promedio:</span>
+                                <span class="summary-value" id="avg-score">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Mejor Puntuación:</span>
+                                <span class="summary-value" id="best-score">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="revenue-tab" class="tab-content">
+                <div class="revenue-stats">
+                    <h3>💰 Análisis de Ingresos</h3>
+                    <p class="coming-soon">🚧 Próximamente: Estadísticas de ingresos por máquina y ubicación</p>
+                </div>
+            </div>
+
+            <div id="usage-tab" class="tab-content">
+                <div class="usage-stats">
+                    <h3>📊 Análisis de Uso</h3>
+                    <p class="coming-soon">🚧 Próximamente: Gráficos de uso por horas y días</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Modal para Agregar/Editar Máquina -->
+        <div id="machine-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modal-title">➕ Agregar Nueva Máquina</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="machine-form">
+                        <div class="form-group">
+                            <label for="machine-name">Nombre de la Máquina:</label>
+                            <input type="text" id="machine-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="machine-location">Ubicación:</label>
+                            <select id="machine-location" required>
+                                <option value="">Seleccionar ubicación...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="machine-max-players">Jugadores Máximos:</label>
+                            <input type="number" id="machine-max-players" min="1" max="8" value="4" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="machine-status">Estado:</label>
+                            <select id="machine-status" required>
+                                <option value="available">Disponible</option>
+                                <option value="occupied">Ocupada</option>
+                                <option value="full">Completa</option>
+                                <option value="offline">Fuera de línea</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button id="save-machine" class="admin-btn primary">💾 Guardar</button>
+                    <button id="cancel-machine" class="admin-btn secondary">❌ Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para Agregar/Editar Tipo de Negocio -->
+        <div id="business-type-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="business-type-modal-title">🏷️ Agregar Nuevo Tipo de Negocio</h3>
+                    <button class="modal-close business-type-modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="business-type-form">
+                        <div class="form-group">
+                            <label for="business-type-name">Nombre del Tipo: *</label>
+                            <input type="text" id="business-type-name" placeholder="Ej: restaurante, pub, casino" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="business-type-icon">Icono (Emoji):</label>
+                            <input type="text" id="business-type-icon" placeholder="🏢" maxlength="2">
+                        </div>
+                        <div class="form-group">
+                            <label for="business-type-description">Descripción:</label>
+                            <textarea id="business-type-description" rows="2" placeholder="Descripción del tipo de negocio..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button id="save-business-type" class="admin-btn primary">💾 Guardar</button>
+                    <button id="cancel-business-type" class="admin-btn secondary">❌ Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para Agregar/Editar Ubicación -->
+        <div id="location-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="location-modal-title">➕ Agregar Nueva Ubicación</h3>
+                    <button class="modal-close location-modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="location-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="location-name-input">Nombre del Local: *</label>
+                                <input type="text" id="location-name-input" placeholder="Ej: Bar El Sapo, Café Central, etc." required>
+                            </div>
+                            <div class="form-group">
+                                <label for="location-business-type">Tipo de Negocio: *</label>
+                                <select id="location-business-type" required>
+                                    <option value="">Seleccionar tipo...</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="location-country">País: *</label>
+                                <input type="text" id="location-country" placeholder="Ej: España, México, Argentina" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="location-city">Ciudad: *</label>
+                                <input type="text" id="location-city" placeholder="Ej: Madrid, Barcelona, Valencia" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="location-address">Dirección:</label>
+                            <input type="text" id="location-address" placeholder="Calle, número, código postal">
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="location-phone">Teléfono:</label>
+                                <input type="tel" id="location-phone" placeholder="Ej: +34 123 456 789">
+                            </div>
+                            <div class="form-group">
+                                <label for="location-email">Email:</label>
+                                <input type="email" id="location-email" placeholder="contacto@local.com">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="location-description">Descripción:</label>
+                            <textarea id="location-description" rows="3" placeholder="Descripción opcional del local..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button id="save-location" class="admin-btn primary">💾 Guardar</button>
+                    <button id="cancel-location" class="admin-btn secondary">❌ Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+</body>
+</html>

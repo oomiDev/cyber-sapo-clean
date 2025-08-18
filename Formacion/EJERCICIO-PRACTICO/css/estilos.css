@@ -1,0 +1,678 @@
+/**
+ * 🎨 ESTILOS PARA EJERCICIO CYBER SAPO
+ * Estilos compartidos para juego.html y app-usuario.html
+ */
+
+/* 🌐 ESTILOS GLOBALES */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* 🎮 ESTILOS ESPECÍFICOS DEL JUEGO */
+.juego-body {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+}
+
+.juego-header {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.juego-header h1 {
+    font-size: 2.5rem;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    margin-bottom: 10px;
+}
+
+.estado-conexion {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+}
+
+.juego-main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .juego-main {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 📱 ESTILOS ESPECÍFICOS DE LA APP */
+.app-body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.app-header {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.app-header h1 {
+    font-size: 2.5rem;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    margin-bottom: 5px;
+}
+
+.app-header h2 {
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 10px;
+}
+
+.app-main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .app-main {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 🎯 SECCIONES COMUNES */
+section {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    margin-bottom: 20px;
+}
+
+section h3 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+    border-bottom: 2px solid #4CAF50;
+    padding-bottom: 5px;
+}
+
+section h2 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+/* 👤 JUGADOR ACTUAL */
+.jugador-actual {
+    grid-column: span 2;
+}
+
+.info-jugador {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    font-size: 1.2rem;
+}
+
+.nombre-jugador {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.puntuacion-jugador {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+/* 📊 LISTA DE JUGADORES */
+.lista-jugadores {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.jugador-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    border-left: 4px solid #ddd;
+    transition: all 0.3s ease;
+}
+
+.jugador-item.activo {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    border-left-color: #2E7D32;
+    transform: scale(1.02);
+}
+
+.jugador-nombre {
+    font-weight: bold;
+}
+
+.jugador-puntuacion {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.indicador-activo {
+    font-size: 1.5rem;
+    animation: pulse 2s infinite;
+}
+
+/* 🎮 CONTROLES */
+.controles-juego {
+    grid-column: span 2;
+}
+
+.botones-control {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #45a049, #3d8b40);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: linear-gradient(135deg, #1976D2, #1565C0);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+/* ⌨️ INSTRUCCIONES DE TECLAS */
+.instrucciones h4 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.teclas-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.tecla {
+    background: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-family: monospace;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+/* 📝 LOG DE ACTIVIDAD */
+.log-actividad {
+    grid-column: span 2;
+}
+
+.log-container {
+    max-height: 200px;
+    overflow-y: auto;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.log-item {
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9rem;
+}
+
+.log-item:last-child {
+    border-bottom: none;
+}
+
+.log-time {
+    color: #666;
+    font-weight: bold;
+}
+
+/* 🏆 PUNTUACIONES EN TIEMPO REAL */
+.puntuaciones-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.puntuacion-card {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 12px;
+    padding: 20px;
+    border-left: 5px solid #ddd;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.puntuacion-card.activo {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    border-left-color: #2E7D32;
+    transform: scale(1.02);
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);
+}
+
+.posicion {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-right: 15px;
+    min-width: 60px;
+}
+
+.jugador-info {
+    flex: 1;
+}
+
+.nombre {
+    font-size: 1.2rem;
+    font-weight: bold;
+    display: block;
+}
+
+.puntuacion {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #4CAF50;
+}
+
+.puntuacion-card.activo .puntuacion {
+    color: white;
+}
+
+.indicador-turno {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+/* 🎯 JUGADOR ACTIVO INFO */
+.jugador-activo-card {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);
+}
+
+.jugador-avatar {
+    font-size: 3rem;
+    margin-right: 20px;
+}
+
+.jugador-datos {
+    flex: 1;
+}
+
+.jugador-datos .nombre {
+    font-size: 1.5rem;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.jugador-datos .puntuacion {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+/* Colores específicos por jugador */
+.jugador-1 {
+    background: linear-gradient(135deg, #4CAF50, #45a049) !important;
+}
+
+.jugador-2 {
+    background: linear-gradient(135deg, #2196F3, #1976D2) !important;
+}
+
+/* 📝 HISTORIAL */
+.historial-lista {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.historial-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border-left: 4px solid #4CAF50;
+}
+
+.jugada-info {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.jugador {
+    font-weight: bold;
+    color: #333;
+}
+
+.hoyo {
+    background: #e3f2fd;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    color: #1976D2;
+}
+
+.puntos {
+    background: #e8f5e8;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-weight: bold;
+    color: #2E7D32;
+}
+
+.tiempo {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.historial-vacio {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 20px;
+}
+
+/* 📊 ESTADÍSTICAS */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.stat-item {
+    text-align: center;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    padding: 20px;
+    border-radius: 12px;
+    border-top: 4px solid #4CAF50;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #333;
+}
+
+/* 📢 NOTIFICACIONES */
+.notificaciones {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 300px;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.notificaciones-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.notificacion {
+    display: flex;
+    align-items: center;
+    background: white;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-left: 4px solid #ddd;
+    transition: all 0.3s ease;
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateX(100%);
+    animation: slideIn 0.3s ease forwards;
+}
+
+@keyframes slideIn {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.notificacion-success {
+    border-left-color: #4CAF50;
+}
+
+.notificacion-error {
+    border-left-color: #f44336;
+}
+
+.notificacion-info {
+    border-left-color: #2196F3;
+}
+
+.notificacion-warning {
+    border-left-color: #ff9800;
+}
+
+.notif-icono {
+    margin-right: 10px;
+    font-size: 1.2rem;
+}
+
+.notif-mensaje {
+    flex: 1;
+    font-weight: 500;
+}
+
+.notif-tiempo {
+    font-size: 0.8rem;
+    color: #666;
+    margin-left: 10px;
+}
+
+/* ✨ ANIMACIONES */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.animacion-puntuacion {
+    transition: all 0.5s ease;
+}
+
+/* 🎉 CELEBRACIÓN ESPECIAL */
+.celebracion-especial {
+    animation: celebrar 2s ease-in-out;
+}
+
+@keyframes celebrar {
+    0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+    }
+    20% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 1;
+    }
+    80% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+}
+
+/* 📱 RESPONSIVE */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .juego-header h1,
+    .app-header h1 {
+        font-size: 2rem;
+    }
+    
+    .botones-control {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+    
+    .teclas-info {
+        justify-content: center;
+    }
+    
+    .notificaciones {
+        width: calc(100% - 20px);
+        right: 10px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .jugador-activo-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .jugador-avatar {
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+}
+
+/* 🎨 EFECTOS HOVER */
+.puntuacion-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+}
+
+.historial-item:hover {
+    background: #e3f2fd;
+    transform: translateX(5px);
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* 🔄 LOADING STATES */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #4CAF50;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

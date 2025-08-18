@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📱 CYBER SAPO - App Usuario</title>
+    <link rel="stylesheet" href="css/estilos.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="app-body">
+    <div class="container">
+        <!-- Header de la App -->
+        <header class="app-header">
+            <h1>📱 CYBER SAPO</h1>
+            <h2>App del Usuario</h2>
+            <div class="estado-conexion">
+                <span id="estado-servidor">🔴 Desconectado</span>
+            </div>
+        </header>
+
+        <!-- Panel Principal de la App -->
+        <main class="app-main">
+            <!-- Puntuaciones en Tiempo Real -->
+            <section class="puntuaciones-tiempo-real">
+                <h3>🏆 Puntuaciones en Vivo</h3>
+                <div id="puntuaciones-container" class="puntuaciones-grid">
+                    <!-- Se llenarán dinámicamente -->
+                </div>
+            </section>
+
+            <!-- Jugador Activo -->
+            <section class="jugador-activo-info">
+                <h3>🎯 Turno Actual</h3>
+                <div id="info-jugador-activo" class="jugador-activo-card">
+                    <div class="jugador-avatar">🎮</div>
+                    <div class="jugador-datos">
+                        <span class="nombre" id="nombre-activo">Esperando...</span>
+                        <span class="puntuacion" id="puntuacion-activo">0 pts</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Historial de Jugadas -->
+            <section class="historial-jugadas">
+                <h3>📝 Últimas Jugadas</h3>
+                <div id="historial-container" class="historial-lista">
+                    <!-- Se llenarán dinámicamente -->
+                </div>
+            </section>
+
+            <!-- Estadísticas Rápidas -->
+            <section class="estadisticas-rapidas">
+                <h3>📊 Estadísticas</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Jugadas</span>
+                        <span class="stat-value" id="total-jugadas">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Puntuación Máxima</span>
+                        <span class="stat-value" id="puntuacion-maxima">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Líder Actual</span>
+                        <span class="stat-value" id="lider-actual">-</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Notificaciones -->
+            <section class="notificaciones">
+                <div id="notificaciones-container" class="notificaciones-lista">
+                    <!-- Notificaciones aparecerán aquí -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        /**
+         * 📱 CLASE PRINCIPAL DE LA APP USUARIO
+         * Maneja la visualización en tiempo real de las puntuaciones
+         */
+        class AppUsuarioCyberSapo {
+            constructor() {
+                this.socket = null;
+                this.conectado = false;
+                this.estadoJuego = null;
+                this.notificacionesActivas = [];
+                
+                this.inicializar();
+            }
+            
+            /**
+             * 🚀 INICIALIZAR APP
+             */
+            async inicializar() {
+                this.log('📱 Inicializando App Usuario...');
+                
+                // 1. Conectar al servidor
+                this.conectarServidor();
+                
+                // 2. Configurar actualizaciones automáticas
+                this.configurarActualizaciones();
+                
+                this.log('✅ App Usuario inicializada');
+            }
+            
+            /**
+             * 🔌 CONECTAR AL SERVIDOR
+             */
+            conectarServidor() {
+                try {
+                    // Crear conexión Socket.IO
+                    this.socket = io('http://localhost:8080');
+                    
+                    // 🟢 EVENTO: Conexión establecida
+                    this.socket.on('connect', () => {
+                        this.conectado = true;
+                        this.actualizarEstadoConexion('🟢 Conectado');
+                        this.log('✅ Conectado al servidor');
+                        this.mostrarNotificacion('Conectado al servidor', 'success');
+                    });
+                    
+                    // 🔴 EVENTO: Desconexión
+                    this.socket.on('disconnect', () => {
+                        this.conectado = false;
+                        this.actualizarEstadoConexion('🔴 Desconectado');
+                        this.log('❌ Desconectado del servidor');
+                        this.mostrarNotificacion('Desconectado del servidor', 'error');
+                    });
+                    
+                    // 📊 EVENTO: Estado inicial
+                    this.socket.on('estado_inicial', (datos) => {
+                        this.log('📊 Estado inicial recibido');
+                        this.estadoJuego = datos.data;
+                        this.actualizarTodasLasSecciones();
+                        this.mostrarNotificacion('Estado del juego cargado', 'info');
+                    });
+                    
+                    // 🎯 EVENTO: Puntuación actualizada
+                    this.socket.on('puntuacion_actualizada', (datos) => {
+                        const jugada = datos.data.jugada;
+                        this.log(`🎯 ${jugada.jugadorNombre} anotó ${jugada.puntos} pts en hoyo ${jugada.hoyo}`);
+                        
+                        this.estadoJuego = datos.data.estadoCompleto;
+                        this.actualizarTodasLasSecciones();
+                        
+                        // Mostrar notificación de puntuación
+                        this.mostrarNotificacion(
+                            `${jugada.jugadorNombre} anotó ${jugada.puntos} puntos!`,
+                            'success'
+                        );
+                        
+                        // Animación especial para puntuaciones altas
+                        if (jugada.puntos >= 1000) {
+                            this.mostrarAnimacionEspecial(jugada);
+                        }
+                    });
+                    
+                    // 👤 EVENTO: Jugador cambiado
+                    this.socket.on('jugador_cambiado', (datos) => {
+                        const jugador = datos.data.jugadorActual;
+                        this.log(`👤 Turno de: ${jugador.nombre}`);
+                        
+                        this.estadoJuego = datos.data.estadoCompleto;
+                        this.actualizarTodasLasSecciones();
+                        
+                        this.mostrarNotificacion(
+                            `Turno de ${jugador.nombre}`,
+                            'info'
+                        );
+                    });
+                    
+                    // 🔄 EVENTO: Juego reiniciado
+                    this.socket.on('juego_reiniciado', (estadoNuevo) => {
+                        this.log('🔄 Juego reiniciado');
+                        this.estadoJuego = estadoNuevo;
+                        this.actualizarTodasLasSecciones();
+                        this.mostrarNotificacion('Nueva partida iniciada', 'info');
+                    });
+                    
+                } catch (error) {
+                    this.log(`❌ Error conectando: ${error.message}`);
+                }
+            }
+            
+            /**
+             * ⏰ CONFIGURAR ACTUALIZACIONES AUTOMÁTICAS
+             */
+            configurarActualizaciones() {
+                // Actualizar estadísticas cada 5 segundos
+                setInterval(() => {
+                    if (this.estadoJuego) {
+                        this.actualizarEstadisticas();
+                    }
+                }, 5000);
+                
+                // Limpiar notificaciones viejas cada 10 segundos
+                setInterval(() => {
+                    this.limpiarNotificacionesViejas();
+                }, 10000);
+            }
+            
+            /**
+             * 🔄 ACTUALIZAR TODAS LAS SECCIONES
+             */
+            actualizarTodasLasSecciones() {
+                if (!this.estadoJuego) return;
+                
+                this.actualizarPuntuaciones();
+                this.actualizarJugadorActivo();
+                this.actualizarHistorial();
+                this.actualizarEstadisticas();
+            }
+            
+            /**
+             * 🏆 ACTUALIZAR PUNTUACIONES
+             */
+            actualizarPuntuaciones() {
+                const container = document.getElementById('puntuaciones-container');
+                container.innerHTML = '';
+                
+                // Ordenar jugadores por puntuación (mayor a menor)
+                const jugadoresOrdenados = [...this.estadoJuego.jugadores]
+                    .sort((a, b) => b.puntuacion - a.puntuacion);
+                
+                jugadoresOrdenados.forEach((jugador, index) => {
+                    const card = document.createElement('div');
+                    card.className = `puntuacion-card ${jugador.activo ? 'activo' : ''}`;
+                    
+                    // Agregar corona al líder
+                    const corona = index === 0 && jugador.puntuacion > 0 ? '👑' : '';
+                    
+                    card.innerHTML = `
+                        <div class="posicion">#${index + 1} ${corona}</div>
+                        <div class="jugador-info">
+                            <div class="nombre">${jugador.nombre}</div>
+                            <div class="puntuacion">${jugador.puntuacion.toLocaleString()} pts</div>
+                        </div>
+                        ${jugador.activo ? '<div class="indicador-turno">🎯 Su turno</div>' : ''}
+                    `;
+                    
+                    container.appendChild(card);
+                });
+            }
+            
+            /**
+             * 🎯 ACTUALIZAR JUGADOR ACTIVO
+             */
+            actualizarJugadorActivo() {
+                const jugadorActivo = this.estadoJuego.jugadores.find(j => j.activo);
+                
+                if (jugadorActivo) {
+                    document.getElementById('nombre-activo').textContent = jugadorActivo.nombre;
+                    document.getElementById('puntuacion-activo').textContent = `${jugadorActivo.puntuacion} pts`;
+                    
+                    // Cambiar color de fondo según el jugador
+                    const card = document.getElementById('info-jugador-activo');
+                    card.className = `jugador-activo-card jugador-${jugadorActivo.id}`;
+                }
+            }
+            
+            /**
+             * 📝 ACTUALIZAR HISTORIAL
+             */
+            actualizarHistorial() {
+                const container = document.getElementById('historial-container');
+                container.innerHTML = '';
+                
+                if (!this.estadoJuego.historial || this.estadoJuego.historial.length === 0) {
+                    container.innerHTML = '<div class="historial-vacio">No hay jugadas aún</div>';
+                    return;
+                }
+                
+                this.estadoJuego.historial.forEach(jugada => {
+                    const item = document.createElement('div');
+                    item.className = 'historial-item';
+                    
+                    const tiempo = new Date(jugada.timestamp).toLocaleTimeString();
+                    const hoyoTexto = jugada.hoyo === 'boca' ? '🐸 Boca' : `Hoyo ${jugada.hoyo}`;
+                    
+                    item.innerHTML = `
+                        <div class="jugada-info">
+                            <span class="jugador">${jugada.jugadorNombre}</span>
+                            <span class="hoyo">${hoyoTexto}</span>
+                            <span class="puntos">+${jugada.puntos} pts</span>
+                        </div>
+                        <div class="tiempo">${tiempo}</div>
+                    `;
+                    
+                    container.appendChild(item);
+                });
+            }
+            
+            /**
+             * 📊 ACTUALIZAR ESTADÍSTICAS
+             */
+            actualizarEstadisticas() {
+                if (!this.estadoJuego.historial) return;
+                
+                // Total de jugadas
+                document.getElementById('total-jugadas').textContent = this.estadoJuego.historial.length;
+                
+                // Puntuación máxima
+                const puntuacionMaxima = Math.max(...this.estadoJuego.jugadores.map(j => j.puntuacion));
+                document.getElementById('puntuacion-maxima').textContent = puntuacionMaxima.toLocaleString();
+                
+                // Líder actual
+                const lider = this.estadoJuego.jugadores.find(j => j.puntuacion === puntuacionMaxima);
+                document.getElementById('lider-actual').textContent = lider ? lider.nombre : '-';
+            }
+            
+            /**
+             * 🎉 MOSTRAR ANIMACIÓN ESPECIAL
+             */
+            mostrarAnimacionEspecial(jugada) {
+                // Crear elemento de celebración
+                const celebracion = document.createElement('div');
+                celebracion.className = 'celebracion-especial';
+                celebracion.innerHTML = `
+                    <div class="celebracion-texto">
+                        🎉 ¡INCREÍBLE! 🎉<br>
+                        ${jugada.jugadorNombre}<br>
+                        ${jugada.puntos} PUNTOS!
+                    </div>
+                `;
+                
+                celebracion.style.position = 'fixed';
+                celebracion.style.top = '50%';
+                celebracion.style.left = '50%';
+                celebracion.style.transform = 'translate(-50%, -50%)';
+                celebracion.style.zIndex = '2000';
+                celebracion.style.backgroundColor = 'rgba(76, 175, 80, 0.95)';
+                celebracion.style.color = 'white';
+                celebracion.style.padding = '2rem';
+                celebracion.style.borderRadius = '15px';
+                celebracion.style.textAlign = 'center';
+                celebracion.style.fontSize = '1.5rem';
+                celebracion.style.fontWeight = 'bold';
+                celebracion.style.boxShadow = '0 10px 30px rgba(0,0,0,0.3)';
+                
+                document.body.appendChild(celebracion);
+                
+                // Animar y remover
+                setTimeout(() => {
+                    celebracion.style.transform = 'translate(-50%, -50%) scale(1.1)';
+                }, 100);
+                
+                setTimeout(() => {
+                    celebracion.style.opacity = '0';
+                    celebracion.style.transform = 'translate(-50%, -50%) scale(0.8)';
+                }, 2000);
+                
+                setTimeout(() => {
+                    if (document.body.contains(celebracion)) {
+                        document.body.removeChild(celebracion);
+                    }
+                }, 2500);
+            }
+            
+            /**
+             * 📢 MOSTRAR NOTIFICACIÓN
+             */
+            mostrarNotificacion(mensaje, tipo = 'info') {
+                const notificacion = {
+                    id: Date.now(),
+                    mensaje: mensaje,
+                    tipo: tipo,
+                    timestamp: new Date()
+                };
+                
+                this.notificacionesActivas.push(notificacion);
+                
+                const container = document.getElementById('notificaciones-container');
+                const elemento = document.createElement('div');
+                elemento.className = `notificacion notificacion-${tipo}`;
+                elemento.id = `notif-${notificacion.id}`;
+                
+                const iconos = {
+                    success: '✅',
+                    error: '❌',
+                    info: 'ℹ️',
+                    warning: '⚠️'
+                };
+                
+                elemento.innerHTML = `
+                    <span class="notif-icono">${iconos[tipo]}</span>
+                    <span class="notif-mensaje">${mensaje}</span>
+                    <span class="notif-tiempo">${notificacion.timestamp.toLocaleTimeString()}</span>
+                `;
+                
+                container.insertBefore(elemento, container.firstChild);
+                
+                // Auto-remover después de 5 segundos
+                setTimeout(() => {
+                    this.removerNotificacion(notificacion.id);
+                }, 5000);
+            }
+            
+            /**
+             * 🗑️ REMOVER NOTIFICACIÓN
+             */
+            removerNotificacion(id) {
+                const elemento = document.getElementById(`notif-${id}`);
+                if (elemento) {
+                    elemento.style.opacity = '0';
+                    elemento.style.transform = 'translateX(100%)';
+                    
+                    setTimeout(() => {
+                        if (elemento.parentNode) {
+                            elemento.parentNode.removeChild(elemento);
+                        }
+                    }, 300);
+                }
+                
+                this.notificacionesActivas = this.notificacionesActivas.filter(n => n.id !== id);
+            }
+            
+            /**
+             * 🧹 LIMPIAR NOTIFICACIONES VIEJAS
+             */
+            limpiarNotificacionesViejas() {
+                const ahora = new Date();
+                const tiempoLimite = 30000; // 30 segundos
+                
+                this.notificacionesActivas.forEach(notif => {
+                    if (ahora - notif.timestamp > tiempoLimite) {
+                        this.removerNotificacion(notif.id);
+                    }
+                });
+            }
+            
+            /**
+             * 🔄 ACTUALIZAR ESTADO DE CONEXIÓN
+             */
+            actualizarEstadoConexion(estado) {
+                const elemento = document.getElementById('estado-servidor');
+                if (elemento) {
+                    elemento.textContent = estado;
+                }
+            }
+            
+            /**
+             * 📝 LOG DE MENSAJES
+             */
+            log(mensaje) {
+                console.log(`[APP-USUARIO] ${mensaje}`);
+            }
+        }
+        
+        // 🚀 INICIALIZAR APP CUANDO LA PÁGINA CARGA
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('📱 Iniciando App Usuario...');
+            const app = new AppUsuarioCyberSapo();
+        });
+    </script>
+</body>
+</html>

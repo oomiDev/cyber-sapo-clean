@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 CYBER SAPO - Juego</title>
+    <link rel="stylesheet" href="css/estilos.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="juego-body">
+    <div class="container">
+        <!-- Header del Juego -->
+        <header class="juego-header">
+            <h1>🐸 CYBER SAPO OMAR</h1>
+            <div class="estado-conexion">
+                <span id="estado-servidor">🔴 Desconectado</span>
+            </div>
+        </header>
+
+        <!-- Panel Principal del Juego -->
+        <main class="juego-main">
+            <!-- Información del Jugador Actual -->
+            <section class="jugador-actual">
+                <h2>🎯 Jugador Activo</h2>
+                <div class="info-jugador">
+                    <span class="nombre-jugador" id="nombre-jugador-actual">Jugador 1</span>
+                    <span class="puntuacion-jugador" id="puntuacion-jugador-actual">0 puntos</span>
+                </div>
+            </section>
+
+            <!-- Tablero de Puntuaciones -->
+            <section class="tablero-puntuaciones">
+                <h3>📊 Puntuaciones</h3>
+                <div id="lista-jugadores" class="lista-jugadores">
+                    <!-- Se llenarán dinámicamente -->
+                </div>
+            </section>
+
+            <!-- Controles del Juego -->
+            <section class="controles-juego">
+                <h3>🎮 Controles</h3>
+                <div class="botones-control">
+                    <button id="btn-nueva-partida" class="btn btn-primary">🎮 Nueva Partida</button>
+                    <button id="btn-cambiar-jugador" class="btn btn-secondary">👤 Cambiar Jugador</button>
+                </div>
+                
+                <!-- Instrucciones -->
+                <div class="instrucciones">
+                    <h4>⌨️ Teclas de Juego:</h4>
+                    <div class="teclas-info">
+                        <span class="tecla">1</span> = 100 pts
+                        <span class="tecla">2</span> = 200 pts
+                        <span class="tecla">3</span> = 300 pts
+                        <span class="tecla">4</span> = 400 pts
+                        <span class="tecla">5</span> = 500 pts
+                        <span class="tecla">M</span> = 1000 pts (Boca)
+                        <span class="tecla">ENTER</span> = Cambiar Jugador
+                    </div>
+                </div>
+            </section>
+
+            <!-- Log de Actividad -->
+            <section class="log-actividad">
+                <h3>📝 Log de Actividad</h3>
+                <div id="log-mensajes" class="log-container">
+                    <!-- Se llenarán dinámicamente -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        /**
+         * 🎮 CLASE PRINCIPAL DEL JUEGO
+         * Maneja toda la lógica del frontend del juego
+         */
+        class JuegoCyberSapo {
+            constructor() {
+                this.socket = null;
+                this.conectado = false;
+                this.estadoJuego = null;
+                
+                this.inicializar();
+            }
+            
+            /**
+             * 🚀 INICIALIZAR JUEGO
+             * Configura la conexión y eventos
+             */
+            async inicializar() {
+                this.log('🚀 Inicializando CYBER SAPO...');
+                
+                // 1. Conectar al servidor
+                this.conectarServidor();
+                
+                // 2. Configurar eventos de UI
+                this.configurarEventosUI();
+                
+                // 3. Configurar eventos de teclado
+                this.configurarEventosTeclado();
+                
+                this.log('✅ Juego inicializado correctamente');
+            }
+            
+            /**
+             * 🔌 CONECTAR AL SERVIDOR
+             * Establece conexión WebSocket
+             */
+            conectarServidor() {
+                try {
+                    // Crear conexión Socket.IO
+                    this.socket = io('http://localhost:8080');
+                    
+                    // 🟢 EVENTO: Conexión establecida
+                    this.socket.on('connect', () => {
+                        this.conectado = true;
+                        this.actualizarEstadoConexion('🟢 Conectado');
+                        this.log('✅ Conectado al servidor');
+                    });
+                    
+                    // 🔴 EVENTO: Desconexión
+                    this.socket.on('disconnect', () => {
+                        this.conectado = false;
+                        this.actualizarEstadoConexion('🔴 Desconectado');
+                        this.log('❌ Desconectado del servidor');
+                    });
+                    
+                    // 📊 EVENTO: Estado inicial del juego
+                    this.socket.on('estado_inicial', (datos) => {
+                        this.log('📊 Estado inicial recibido');
+                        this.estadoJuego = datos.data;
+                        this.actualizarInterfaz();
+                    });
+                    
+                    // 🎯 EVENTO: Puntuación actualizada
+                    this.socket.on('puntuacion_actualizada', (datos) => {
+                        this.log(`🎯 Puntuación actualizada: ${datos.data.jugada.jugadorNombre} +${datos.data.jugada.puntos} pts`);
+                        this.estadoJuego = datos.data.estadoCompleto;
+                        this.actualizarInterfaz();
+                        this.mostrarAnimacionPuntuacion(datos.data.jugada);
+                    });
+                    
+                    // 👤 EVENTO: Jugador cambiado
+                    this.socket.on('jugador_cambiado', (datos) => {
+                        this.log(`👤 Jugador activo: ${datos.data.jugadorActual.nombre}`);
+                        this.estadoJuego = datos.data.estadoCompleto;
+                        this.actualizarInterfaz();
+                    });
+                    
+                    // 🔄 EVENTO: Juego reiniciado
+                    this.socket.on('juego_reiniciado', (estadoNuevo) => {
+                        this.log('🔄 Juego reiniciado');
+                        this.estadoJuego = estadoNuevo;
+                        this.actualizarInterfaz();
+                    });
+                    
+                    // ❌ EVENTO: Error
+                    this.socket.on('error_puntuacion', (error) => {
+                        this.log(`❌ Error: ${error.mensaje}`);
+                        alert(`Error: ${error.mensaje}`);
+                    });
+                    
+                } catch (error) {
+                    this.log(`❌ Error conectando: ${error.message}`);
+                }
+            }
+            
+            /**
+             * 🖱️ CONFIGURAR EVENTOS DE UI
+             * Configura botones y clicks
+             */
+            configurarEventosUI() {
+                // Botón Nueva Partida
+                document.getElementById('btn-nueva-partida').addEventListener('click', () => {
+                    this.nuevaPartida();
+                });
+                
+                // Botón Cambiar Jugador
+                document.getElementById('btn-cambiar-jugador').addEventListener('click', () => {
+                    this.cambiarJugador();
+                });
+            }
+            
+            /**
+             * ⌨️ CONFIGURAR EVENTOS DE TECLADO
+             * Captura teclas para anotar puntos
+             */
+            configurarEventosTeclado() {
+                document.addEventListener('keydown', (event) => {
+                    // Mapeo de teclas a puntuaciones
+                    const mapeoPuntuaciones = {
+                        '1': { hoyo: 1, puntos: 100 },
+                        '2': { hoyo: 2, puntos: 200 },
+                        '3': { hoyo: 3, puntos: 300 },
+                        '4': { hoyo: 4, puntos: 400 },
+                        '5': { hoyo: 5, puntos: 500 },
+                        'm': { hoyo: 'boca', puntos: 1000 }
+                    };
+                    
+                    const tecla = event.key.toLowerCase();
+                    
+                    // Verificar si es una tecla de puntuación
+                    if (mapeoPuntuaciones[tecla]) {
+                        event.preventDefault();
+                        const { hoyo, puntos } = mapeoPuntuaciones[tecla];
+                        this.enviarPuntuacion(hoyo, puntos);
+                    }
+                    
+                    // Tecla ENTER para cambiar jugador
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        this.cambiarJugador();
+                    }
+                });
+                
+                this.log('⌨️ Eventos de teclado configurados');
+            }
+            
+            /**
+             * 🎯 ENVIAR PUNTUACIÓN AL SERVIDOR
+             * Envía nueva puntuación vía WebSocket
+             */
+            enviarPuntuacion(hoyo, puntos) {
+                if (!this.conectado) {
+                    this.log('❌ No hay conexión para enviar puntuación');
+                    alert('No hay conexión con el servidor');
+                    return;
+                }
+                
+                if (!this.estadoJuego) {
+                    this.log('❌ No hay estado del juego');
+                    return;
+                }
+                
+                // Encontrar jugador activo
+                const jugadorActivo = this.estadoJuego.jugadores.find(j => j.activo);
+                if (!jugadorActivo) {
+                    this.log('❌ No hay jugador activo');
+                    return;
+                }
+                
+                // Preparar datos
+                const datosPuntuacion = {
+                    jugadorId: jugadorActivo.id,
+                    hoyo: hoyo,
+                    puntos: puntos,
+                    timestamp: new Date().toISOString()
+                };
+                
+                // Enviar al servidor
+                this.socket.emit('nueva_puntuacion', datosPuntuacion);
+                
+                this.log(`📤 Puntuación enviada: Hoyo ${hoyo}, ${puntos} puntos`);
+            }
+            
+            /**
+             * 👤 CAMBIAR JUGADOR ACTIVO
+             */
+            cambiarJugador() {
+                if (!this.conectado) {
+                    this.log('❌ No hay conexión');
+                    return;
+                }
+                
+                this.socket.emit('cambiar_jugador', {
+                    timestamp: new Date().toISOString()
+                });
+                
+                this.log('👤 Solicitando cambio de jugador');
+            }
+            
+            /**
+             * 🎮 NUEVA PARTIDA
+             */
+            async nuevaPartida() {
+                if (!this.conectado) {
+                    this.log('❌ No hay conexión');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('http://localhost:8080/api/reiniciar', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        this.log('🎮 Nueva partida iniciada');
+                    } else {
+                        this.log('❌ Error iniciando nueva partida');
+                    }
+                    
+                } catch (error) {
+                    this.log(`❌ Error: ${error.message}`);
+                }
+            }
+            
+            /**
+             * 🖼️ ACTUALIZAR INTERFAZ
+             * Actualiza toda la interfaz con el estado actual
+             */
+            actualizarInterfaz() {
+                if (!this.estadoJuego) return;
+                
+                // Actualizar jugador activo
+                const jugadorActivo = this.estadoJuego.jugadores.find(j => j.activo);
+                if (jugadorActivo) {
+                    document.getElementById('nombre-jugador-actual').textContent = jugadorActivo.nombre;
+                    document.getElementById('puntuacion-jugador-actual').textContent = `${jugadorActivo.puntuacion} puntos`;
+                }
+                
+                // Actualizar lista de jugadores
+                this.actualizarListaJugadores();
+            }
+            
+            /**
+             * 👥 ACTUALIZAR LISTA DE JUGADORES
+             */
+            actualizarListaJugadores() {
+                const contenedor = document.getElementById('lista-jugadores');
+                contenedor.innerHTML = '';
+                
+                this.estadoJuego.jugadores.forEach(jugador => {
+                    const elementoJugador = document.createElement('div');
+                    elementoJugador.className = `jugador-item ${jugador.activo ? 'activo' : ''}`;
+                    
+                    elementoJugador.innerHTML = `
+                        <span class="jugador-nombre">${jugador.nombre}</span>
+                        <span class="jugador-puntuacion">${jugador.puntuacion} pts</span>
+                        ${jugador.activo ? '<span class="indicador-activo">🎯</span>' : ''}
+                    `;
+                    
+                    contenedor.appendChild(elementoJugador);
+                });
+            }
+            
+            /**
+             * ✨ MOSTRAR ANIMACIÓN DE PUNTUACIÓN
+             */
+            mostrarAnimacionPuntuacion(jugada) {
+                // Crear elemento de animación
+                const animacion = document.createElement('div');
+                animacion.className = 'animacion-puntuacion';
+                animacion.textContent = `+${jugada.puntos}`;
+                
+                // Posicionar en el centro
+                animacion.style.position = 'fixed';
+                animacion.style.top = '50%';
+                animacion.style.left = '50%';
+                animacion.style.transform = 'translate(-50%, -50%)';
+                animacion.style.fontSize = '3rem';
+                animacion.style.color = '#4CAF50';
+                animacion.style.fontWeight = 'bold';
+                animacion.style.zIndex = '1000';
+                animacion.style.pointerEvents = 'none';
+                
+                document.body.appendChild(animacion);
+                
+                // Animar y remover
+                setTimeout(() => {
+                    animacion.style.transform = 'translate(-50%, -150%) scale(1.5)';
+                    animacion.style.opacity = '0';
+                }, 100);
+                
+                setTimeout(() => {
+                    document.body.removeChild(animacion);
+                }, 1000);
+            }
+            
+            /**
+             * 🔄 ACTUALIZAR ESTADO DE CONEXIÓN
+             */
+            actualizarEstadoConexion(estado) {
+                const elemento = document.getElementById('estado-servidor');
+                if (elemento) {
+                    elemento.textContent = estado;
+                }
+            }
+            
+            /**
+             * 📝 REGISTRAR MENSAJE EN LOG
+             */
+            log(mensaje) {
+                console.log(`[JUEGO] ${mensaje}`);
+                
+                // Mostrar en UI
+                const logContainer = document.getElementById('log-mensajes');
+                if (logContainer) {
+                    const timestamp = new Date().toLocaleTimeString();
+                    const elementoLog = document.createElement('div');
+                    elementoLog.className = 'log-item';
+                    elementoLog.innerHTML = `<span class="log-time">[${timestamp}]</span> ${mensaje}`;
+                    
+                    logContainer.insertBefore(elementoLog, logContainer.firstChild);
+                    
+                    // Mantener solo últimos 10 mensajes
+                    while (logContainer.children.length > 10) {
+                        logContainer.removeChild(logContainer.lastChild);
+                    }
+                }
+            }
+        }
+        
+        // 🚀 INICIALIZAR JUEGO CUANDO LA PÁGINA CARGA
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🎮 Iniciando CYBER SAPO...');
+            const juego = new JuegoCyberSapo();
+        });
+    </script>
+</body>
+</html>

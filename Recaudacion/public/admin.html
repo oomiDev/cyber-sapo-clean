@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración - Sistema de Recaudación</title>
+    
+    <!-- CSS Framework y estilos -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-color: #1f2937;
+            --light-bg: #f8fafc;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .admin-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .form-section {
+            border-left: 4px solid var(--primary-color);
+            padding-left: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .nav-tabs .nav-link.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .table-responsive {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn-action {
+            margin: 0 2px;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-activa { background-color: #d1fae5; color: #065f46; }
+        .status-inactiva { background-color: #f3f4f6; color: #374151; }
+        .status-mantenimiento { background-color: #fef3c7; color: #92400e; }
+        .status-averiada { background-color: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+    <!-- Navegación -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-cogs me-2"></i>
+                Panel de Administración
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">
+                    <i class="fas fa-chart-line me-1"></i>Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <!-- Pestañas principales -->
+        <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="regiones-tab" data-bs-toggle="tab" data-bs-target="#regiones" type="button">
+                    <i class="fas fa-map me-2"></i>Gestión de Regiones
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="locales-tab" data-bs-toggle="tab" data-bs-target="#locales" type="button">
+                    <i class="fas fa-building me-2"></i>Gestión de Locales
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="maquinas-tab" data-bs-toggle="tab" data-bs-target="#maquinas" type="button">
+                    <i class="fas fa-desktop me-2"></i>Gestión de Máquinas
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="adminTabContent">
+            <!-- TAB: GESTIÓN DE REGIONES -->
+            <div class="tab-pane fade show active" id="regiones" role="tabpanel">
+                <div class="row">
+                    <!-- Formulario para agregar región -->
+                    <div class="col-md-4">
+                        <div class="admin-card p-4">
+                            <h5 class="mb-3">
+                                <i class="fas fa-plus-circle me-2"></i>
+                                Agregar Nueva Región
+                            </h5>
+                            
+                            <form id="formRegion">
+                                <div class="form-section">
+                                    <h6 class="text-primary mb-3">Información Básica</h6>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Código de Región *</label>
+                                        <input type="text" class="form-control" id="codigoRegion" required 
+                                               placeholder="NORTE" maxlength="10" style="text-transform: uppercase;">
+                                        <div class="form-text">Código único para identificar la región</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Nombre de la Región *</label>
+                                        <input type="text" class="form-control" id="nombreRegion" required 
+                                               placeholder="Región Norte" maxlength="100">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Descripción</label>
+                                        <textarea class="form-control" id="descripcionRegion" 
+                                                  placeholder="Descripción de la región..." maxlength="500" rows="2"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="form-section">
+                                    <h6 class="text-primary mb-3">Configuración Visual</h6>
+                                    
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <label class="form-label">Color</label>
+                                            <input type="color" class="form-control form-control-color" id="colorRegion" 
+                                                   value="#2563eb" title="Seleccionar color">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Orden</label>
+                                            <input type="number" class="form-control" id="ordenRegion" 
+                                                   min="0" value="0" placeholder="0">
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3 mt-3">
+                                        <label class="form-label">Icono</label>
+                                        <select class="form-select" id="iconoRegion">
+                                            <option value="fas fa-map-marker-alt">📍 Marcador</option>
+                                            <option value="fas fa-globe">🌍 Globo</option>
+                                            <option value="fas fa-map">🗺️ Mapa</option>
+                                            <option value="fas fa-location-dot">📍 Punto</option>
+                                            <option value="fas fa-compass">🧭 Brújula</option>
+                                            <option value="fas fa-flag">🚩 Bandera</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Notas</label>
+                                        <textarea class="form-control" id="notasRegion" 
+                                                  placeholder="Notas adicionales..." maxlength="1000" rows="2"></textarea>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-save me-2"></i>Guardar Región
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Lista de regiones -->
+                    <div class="col-md-8">
+                        <div class="admin-card p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-list me-2"></i>
+                                    Regiones Registradas
+                                </h5>
+                                <button class="btn btn-outline-primary btn-sm" onclick="cargarRegiones()">
+                                    <i class="fas fa-sync-alt me-1"></i>Actualizar
+                                </button>
+                            </div>
+
+                            <!-- Filtros rápidos -->
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <select class="form-select form-select-sm" id="filtroEstadoRegiones" onchange="cargarRegiones()">
+                                        <option value="">Todas las regiones</option>
+                                        <option value="true">Solo activas</option>
+                                        <option value="false">Solo inactivas</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <select class="form-select form-select-sm" id="ordenRegiones" onchange="cargarRegiones()">
+                                        <option value="orden">Ordenar por posición</option>
+                                        <option value="nombre">Ordenar por nombre</option>
+                                        <option value="maquinas">Ordenar por máquinas</option>
+                                        <option value="ingresos">Ordenar por ingresos</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control form-control-sm" id="buscarRegion" 
+                                           placeholder="Buscar región..." onkeyup="buscarRegiones()">
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Código</th>
+                                            <th>Nombre</th>
+                                            <th>Estado</th>
+                                            <th>Locales</th>
+                                            <th>Máquinas</th>
+                                            <th>Ingresos</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tablaRegiones">
+                                        <tr>
+                                            <td colspan="7" class="text-center">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Cargando...</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: GESTIÓN DE LOCALES -->
+            <div class="tab-pane fade" id="locales" role="tabpanel">
+                <div class="row">
+                    <!-- Formulario para agregar local -->
+                    <div class="col-md-4">
+                        <div class="admin-card p-4">
+                            <h5 class="mb-3">
+                                <i class="fas fa-plus-circle me-2"></i>
+                                Agregar Nuevo Local
+                            </h5>
+                            
+                            <form id="formLocal">
+                                <div class="form-section">
+                                    <h6 class="text-primary mb-3">Información Básica</h6>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Código del Local *</label>
+                                        <input type="text" class="form-control" id="codigoLocal" required 
+                                               placeholder="LOC001" maxlength="20">
+                                        <div class="form-text">Código único para identificar el local</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Nombre del Local *</label>
+                                        <input type="text" class="form-control" id="nombreLocal" required 
+                                               placeholder="Centro Comercial Plaza Norte" maxlength="150">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Tipo de Establecimiento *</label>
+                                        <select class="form-select" id="tipoEstablecimiento" required>
+                                            <option value="">Seleccionar tipo</option>
+                                            <option value="Oficina">Oficina</option>
+                                            <option value="Escuela">Escuela</option>
+                                            <option value="Universidad">Universidad</option>
+                                            <option value="Hospital">Hospital</option>
+                                            <option value="Centro Comercial">Centro Comercial</option>
+                                            <option value="Fábrica">Fábrica</option>
+                                            <option value="Restaurante">Restaurante</option>
+                                            <option value="Hotel">Hotel</option>
+                                            <option value="Gimnasio">Gimnasio</option>
+                                            <option value="Estación de Servicio">Estación de Servicio</option>
+                                            <option value="Aeropuerto">Aeropuerto</option>
+                                            <option value="Estación de Tren">Estación de Tren</option>
+                                            <option value="Centro Deportivo">Centro Deportivo</option>
+                                            <option value="Biblioteca">Biblioteca</option>
+                                            <option value="Otro">Otro</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-section">
+                                    <h6 class="text-primary mb-3">Ubicación</h6>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Región *</label>
+                                        <select class="form-select" id="regionLocal" required>
+                                            <option value="">Seleccionar región</option>
+                                            <!-- Las regiones se cargan dinámicamente -->
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Ciudad *</label>
+                                        <input type="text" class="form-control" id="ciudadLocal" required 
+                                               placeholder="Madrid" maxlength="100">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Dirección *</label>
+                                        <textarea class="form-control" id="direccionLocal" required 
+                                                  placeholder="Calle Principal 123, Local 45" maxlength="200" rows="2"></textarea>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <label class="form-label">Código Postal</label>
+                                            <input type="text" class="form-control" id="codigoPostal" 
+                                                   placeholder="28001" maxlength="10">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Piso/Zona</label>
+                                            <input type="text" class="form-control" id="pisoLocal" 
+                                                   placeholder="Planta Baja" maxlength="20">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-section">
+                                    <h6 class="text-primary mb-3">Contacto</h6>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Responsable</label>
+                                        <input type="text" class="form-control" id="responsableLocal" 
+                                               placeholder="Juan Pérez" maxlength="100">
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <label class="form-label">Teléfono</label>
+                                            <input type="tel" class="form-control" id="telefonoLocal" 
+                                                   placeholder="+34 600 123 456" maxlength="20">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Email</label>
+                                            <input type="email" class="form-control" id="emailLocal" 
+                                                   placeholder="contacto@local.com">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-save me-2"></i>Guardar Local
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Lista de locales -->
+                    <div class="col-md-8">
+                        <div class="admin-card p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-list me-2"></i>
+                                    Locales Registrados
+                                </h5>
+                                <button class="btn btn-outline-primary btn-sm" onclick="cargarLocales()">
+                                    <i class="fas fa-sync-alt me-1"></i>Actualizar
+                                </button>
+                            </div>
+
+                            <!-- Filtros rápidos -->
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <select class="form-select form-select-sm" id="filtroRegionLocales" onchange="cargarLocales()">
+                                        <option value="">Todas las regiones</option>
+                                        <!-- Las regiones se cargan dinámicamente -->
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <select class="form-select form-select-sm" id="filtroTipoLocales" onchange="cargarLocales()">
+                                        <option value="">Todos los tipos</option>
+                                        <option value="Oficina">Oficina</option>
+                                        <option value="Centro Comercial">Centro Comercial</option>
+                                        <option value="Hospital">Hospital</option>
+                                        <option value="Escuela">Escuela</option>
+                                        <option value="Otro">Otro</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control form-control-sm" id="buscarLocal" 
+                                           placeholder="Buscar por nombre..." onkeyup="buscarLocales()">
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Código</th>
+                                            <th>Nombre</th>
+                                            <th>Tipo</th>
+                                            <th>Región</th>
+                                            <th>Máquinas</th>
+                                            <th>Ingresos</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tablaLocales">
+                                        <tr>
+                                            <td colspan="7" class="text-center">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Cargando...</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: GESTIÓN DE MÁQUINAS -->
+            <div class="tab-pane fade" id="maquinas" role="tabpanel">
+                <div class="row">
+                    <!-- Formulario para agregar máquina -->
+                    <div class="col-md-4">
+                        <div class="admin-card p-4">
+                            <h5 class="mb-3">
+                                <i class="fas fa-plus-circle me-2"></i>
+                                Agregar Nueva Máquina
+                            </h5>
+                            
+                            <form id="formMaquina">
+                                <div class="form-section">
+                                    <h6 class="text-primary mb-3">Información Básica</h6>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Código de Máquina *</label>
+                                        <input type="text" class="form-control" id="codigoMaquina" required 
+                                               placeholder="MAQ001" maxlength="20">
+                                        <div class="form-text">Código único para identificar la máquina</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Nombre de la Máquina *</label>
+                                        <input type="text" class="form-control" id="nombreMaquina" required 
+                                               placeholder="Máquina Expendedora Principal" maxlength="100">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Descripción</label>
+                                        <textarea class="form-control" id="descripcionMaquina" 
+                                                  placeholder="Descripción de la máquina..." maxlength="500" rows="2"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="form-section">
+                                    <h6 class="text-primary mb-3">Ubicación</h6>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Seleccionar Local Existente</label>
+                                        <select class="form-select" id="localExistente" onchange="seleccionarLocal()">
+                                            <option value="">Seleccionar local...</option>
+                                        </select>
+                                        <div class="form-text">O complete manualmente la ubicación</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Región *</label>
+                                        <select class="form-select" id="regionMaquina" required>
+                                            <option value="">Seleccionar región</option>
+                                            <!-- Las regiones se cargan dinámicamente -->
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Ciudad *</label>
+                                        <input type="text" class="form-control" id="ciudadMaquina" required 
+                                               placeholder="Madrid" maxlength="100">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Dirección *</label>
+                                        <textarea class="form-control" id="direccionMaquina" required 
+                                                  placeholder="Calle Principal 123, Local 45" maxlength="200" rows="2"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="form-section">
+                                    <h6 class="text-primary mb-3">Configuración</h6>
+                                    
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <label class="form-label">Valor por Pulso *</label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" id="valorPorPulso" 
+                                                       step="0.01" min="0.01" value="1.00" required>
+                                                <span class="input-group-text">€</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Moneda</label>
+                                            <select class="form-select" id="monedaMaquina">
+                                                <option value="EUR" selected>EUR (€)</option>
+                                                <option value="USD">USD ($)</option>
+                                                <option value="COP">COP</option>
+                                                <option value="MXN">MXN</option>
+                                                <option value="ARS">ARS</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3 mt-3">
+                                        <label class="form-label">Capacidad Máxima</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="capacidadMaxima" 
+                                                   min="0" value="1000">
+                                            <span class="input-group-text">€</span>
+                                        </div>
+                                        <div class="form-text">Capacidad máxima de dinero que puede almacenar</div>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="fas fa-save me-2"></i>Guardar Máquina
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Lista de máquinas -->
+                    <div class="col-md-8">
+                        <div class="admin-card p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-desktop me-2"></i>
+                                    Máquinas Registradas
+                                </h5>
+                                <button class="btn btn-outline-success btn-sm" onclick="cargarMaquinas()">
+                                    <i class="fas fa-sync-alt me-1"></i>Actualizar
+                                </button>
+                            </div>
+
+                            <!-- Filtros rápidos -->
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <select class="form-select form-select-sm" id="filtroRegionMaquinas" onchange="cargarMaquinas()">
+                                        <option value="">Todas las regiones</option>
+                                        <!-- Las regiones se cargan dinámicamente -->
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select form-select-sm" id="filtroEstadoMaquinas" onchange="cargarMaquinas()">
+                                        <option value="">Todos los estados</option>
+                                        <option value="Activa">Activa</option>
+                                        <option value="Inactiva">Inactiva</option>
+                                        <option value="Mantenimiento">Mantenimiento</option>
+                                        <option value="Averiada">Averiada</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="text" class="form-control form-control-sm" id="buscarMaquina" 
+                                           placeholder="Buscar por código o nombre..." onkeyup="buscarMaquinas()">
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Código</th>
+                                            <th>Nombre</th>
+                                            <th>Ubicación</th>
+                                            <th>Estado</th>
+                                            <th>Pulsos Hoy</th>
+                                            <th>Ingresos Hoy</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tablaMaquinas">
+                                        <tr>
+                                            <td colspan="7" class="text-center">
+                                                <div class="spinner-border text-success" role="status">
+                                                    <span class="visually-hidden">Cargando...</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>
