@@ -21,7 +21,6 @@ const regionSchema = new mongoose.Schema({
     codigoRegion: {
         type: String,
         required: [true, 'El código de región es obligatorio'],
-        unique: true,
         uppercase: true,
         trim: true,
         maxlength: [10, 'El código no puede exceder 10 caracteres'],

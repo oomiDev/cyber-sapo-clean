@@ -13,7 +13,6 @@ const localSchema = new mongoose.Schema({
     codigoLocal: {
         type: String,
         required: [true, 'El código del local es obligatorio'],
-        unique: true,
         trim: true,
         uppercase: true,
         minlength: [3, 'El código debe tener al menos 3 caracteres'],

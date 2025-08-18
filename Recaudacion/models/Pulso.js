@@ -20,7 +20,6 @@ const pulsoSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Maquina',
         required: [true, 'La referencia a la máquina es obligatoria'],
-        index: true // Índice para consultas rápidas por máquina
     },
 
     // CÓDIGO DE LA MÁQUINA (desnormalizado para consultas rápidas)
@@ -28,8 +27,7 @@ const pulsoSchema = new mongoose.Schema({
         type: String,
         required: [true, 'El código de máquina es obligatorio'],
         trim: true,
-        uppercase: true,
-        index: true
+        uppercase: true
     },
 
     // INFORMACIÓN DEL PULSO
@@ -58,7 +56,6 @@ const pulsoSchema = new mongoose.Schema({
         type: Date,
         required: [true, 'La fecha y hora son obligatorias'],
         default: Date.now,
-        index: true // Índice para consultas por fecha
     },
 
     // INFORMACIÓN TEMPORAL PARA ANÁLISIS
@@ -66,8 +63,7 @@ const pulsoSchema = new mongoose.Schema({
         // Año del pulso (para agregaciones anuales)
         año: {
             type: Number,
-            required: true,
-            index: true
+            required: true
         },
 
         // Mes del pulso (1-12)
@@ -75,8 +71,7 @@ const pulsoSchema = new mongoose.Schema({
             type: Number,
             required: true,
             min: 1,
-            max: 12,
-            index: true
+            max: 12
         },
 
         // Día del mes (1-31)
@@ -100,8 +95,7 @@ const pulsoSchema = new mongoose.Schema({
             type: Number,
             required: true,
             min: 0,
-            max: 23,
-            index: true
+            max: 23
         },
 
         // Minuto de la hora (0-59)
@@ -134,14 +128,12 @@ const pulsoSchema = new mongoose.Schema({
         region: {
             type: String,
             required: true,
-            trim: true,
-            index: true
+            trim: true
         },
         ciudad: {
             type: String,
             required: true,
-            trim: true,
-            index: true
+            trim: true
         },
         direccion: {
             type: String,
@@ -201,8 +193,7 @@ const pulsoSchema = new mongoose.Schema({
     // Indica si el pulso está activo (para soft delete)
     activo: {
         type: Boolean,
-        default: true,
-        index: true
+        default: true
     }
 }, {
     // Opciones del esquema

@@ -13,7 +13,6 @@ const maquinaSchema = new mongoose.Schema({
     codigoMaquina: {
         type: String,
         required: [true, 'El código de máquina es obligatorio'],
-        unique: true,
         trim: true,
         uppercase: true,
         minlength: [3, 'El código debe tener al menos 3 caracteres'],
