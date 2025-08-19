@@ -594,7 +594,7 @@ async function cargarLocales() {
     try {
         const region = document.getElementById('filtro-region-local')?.value || '';
         const tipo = document.getElementById('filtro-tipo-local')?.value || '';
-        const busqueda = document.getElementById('buscarLocal').value || '';
+        const busqueda = document.getElementById('busqueda-local')?.value || '';
 
         const url = new URL('/api/locales', window.location.origin);
         if (region) url.searchParams.append('region', region);
