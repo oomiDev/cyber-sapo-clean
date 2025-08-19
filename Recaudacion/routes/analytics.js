@@ -79,11 +79,11 @@ router.get('/dashboard', async (req, res) => {
             ])
         ]);
 
-        // --- 3. CONSTRUIR RESPUESTA ---
-        const data = agregados[0] || {};
-        const metricasBase = data.metricas?.[0] || { totalPulsos: 0, totalIngresos: 0, maquinasActivas: [] };
+        // --- 3. CONSTRUIR RESPUESTA SEGURA ---
+        const resultados = agregados[0] || {};
+        const metricasBase = resultados.metricas?.[0] || { totalPulsos: 0, totalIngresos: 0, maquinasActivas: [] };
 
-        res.json({
+        const respuesta = {
             metricas: {
                 pulsos: metricasBase.totalPulsos,
                 ingresos: metricasBase.totalIngresos,
@@ -92,19 +92,21 @@ router.get('/dashboard', async (req, res) => {
                 ingresoPromedio: metricasBase.maquinasActivas.length > 0 ? metricasBase.totalIngresos / metricasBase.maquinasActivas.length : 0,
             },
             graficas: {
-                tendencia: data.tendencia || [],
-                distribucionHoraria: data.distribucionHoraria || [],
-                ingresosPorRegion: data.ingresosPorRegion || [],
+                tendencia: resultados.tendencia || [],
+                distribucionHoraria: resultados.distribucionHoraria || [],
+                ingresosPorRegion: resultados.ingresosPorRegion || [],
             },
             maquinas: {
                 total: maquinas.length,
                 distribucion: distribucionEstados || [],
             },
             topMaquinas: {
-                porIngresos: data.topIngresos || [],
-                porPulsos: data.topPulsos || [],
+                porIngresos: resultados.topIngresos || [],
+                porPulsos: resultados.topPulsos || [],
             },
-        });
+        };
+
+        res.json(respuesta);
 
     } catch (error) {
         console.error('Error en GET /dashboard:', error);
