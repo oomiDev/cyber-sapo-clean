@@ -126,6 +126,13 @@ const maquinaSchema = new mongoose.Schema({
             default: 'Activa'
         },
 
+        // Estado lógico del sistema (usado para agrupaciones y filtros)
+        sistema: {
+            type: String,
+            enum: ['Activa', 'Inactiva', 'Mantenimiento', 'Averiada'],
+            default: 'Activa'
+        },
+
         // Última vez que se recibió un pulso
         ultimaActividad: {
             type: Date,
