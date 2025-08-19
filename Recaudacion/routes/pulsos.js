@@ -33,7 +33,7 @@ router.post('/recibir', async (req, res) => {
     
     try {
         // PASO 1: Validar datos recibidos
-        const { codigoMaquina, valorPulso, numeroSecuencia } = req.body;
+        const { codigoMaquina, valor, numeroSecuencia } = req.body; // 'valor' viene del simulador
         
         // Validaciones básicas
         if (!codigoMaquina) {
@@ -65,13 +65,13 @@ router.post('/recibir', async (req, res) => {
         }
 
         // PASO 4: Determinar el valor del pulso
-        const valorFinal = valorPulso || maquina.configuracion.valorPorPulso;
+        const valorFinal = valor || maquina.configuracion.valorPorPulso;
 
         // PASO 5: Crear registro del pulso
         const nuevoPulso = new Pulso({
             maquina: maquina._id,
             codigoMaquina: maquina.codigoMaquina,
-            valorPulso: valorFinal,
+            valorPulso: valorFinal, // El modelo espera 'valorPulso'
             moneda: maquina.configuracion.moneda,
             fechaHora: new Date(),
             ubicacion: {
