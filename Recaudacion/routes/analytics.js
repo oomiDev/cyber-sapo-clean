@@ -20,131 +20,95 @@ router.get('/dashboard', async (req, res) => {
     try {
         const { region, fechaInicio, fechaFin } = req.query;
 
-        // --- 1. FILTROS --- 
-        const filtroMaquina = region ? { region } : {};
+        // --- 1. FILTROS ---
+        const filtroMaquina = region ? { 'ubicacion.region': region } : {};
         const filtroFecha = {};
-        let fechaInicioObj, fechaFinObj;
+        if (fechaInicio) filtroFecha.$gte = new Date(`${fechaInicio}T00:00:00.000Z`);
+        if (fechaFin) filtroFecha.$lte = new Date(`${fechaFin}T23:59:59.999Z`);
 
-        if (fechaInicio) {
-            fechaInicioObj = new Date(fechaInicio);
-            fechaInicioObj.setHours(0, 0, 0, 0);
-            filtroFecha.$gte = fechaInicioObj;
-        }
-        if (fechaFin) {
-            fechaFinObj = new Date(fechaFin);
-            fechaFinObj.setHours(23, 59, 59, 999);
-            filtroFecha.$lte = fechaFinObj;
-        }
-
-        // --- 2. OBTENER MÁQUINAS --- 
         const maquinas = await Maquina.find(filtroMaquina).lean();
         const idsMaquinas = maquinas.map(m => m._id);
 
         const filtroPulsos = { maquina: { $in: idsMaquinas } };
-        if (fechaInicio || fechaFin) {
-            filtroPulsos.fechaHora = filtroFecha;
-        }
+        if (fechaInicio || fechaFin) filtroPulsos.fechaHora = filtroFecha;
 
-        // --- 3. AGREGACIONES DE PULSOS --- 
-        const [pulsosAgregados, tendencia, distribucionHoraria, topMaquinas] = await Promise.all([
-            // Métricas principales
+        // --- 2. AGREGACIONES ---
+        const [agregados, distribucionEstados] = await Promise.all([
             Pulso.aggregate([
                 { $match: filtroPulsos },
                 {
-                    $group: {
-                        _id: null,
-                        totalPulsos: { $sum: 1 },
-                        totalIngresos: { $sum: '$valorPulso' },
-                        maquinasActivas: { $addToSet: '$maquina' }
+                    $facet: {
+                        metricas: [
+                            { $group: { _id: null, totalPulsos: { $sum: 1 }, totalIngresos: { $sum: '$valorPulso' }, maquinasActivas: { $addToSet: '$maquina' } } }
+                        ],
+                        tendencia: [
+                            { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$fechaHora' } }, ingresos: { $sum: '$valorPulso' } } },
+                            { $sort: { _id: 1 } },
+                            { $project: { _id: 0, fecha: '$_id', ingresos: 1 } }
+                        ],
+                        distribucionHoraria: [
+                            { $group: { _id: { $hour: { date: '$fechaHora', timezone: 'Europe/Madrid' } }, pulsos: { $sum: 1 } } },
+                            { $sort: { _id: 1 } },
+                            { $project: { _id: 0, hora: '$_id', pulsos: 1 } }
+                        ],
+                        ingresosPorRegion: [
+                            { $lookup: { from: 'maquinas', localField: 'maquina', foreignField: '_id', as: 'info' } },
+                            { $unwind: '$info' },
+                            { $group: { _id: '$info.ubicacion.region', ingresos: { $sum: '$valorPulso' } } },
+                            { $project: { _id: 0, region: '$_id', ingresos: 1 } }
+                        ],
+                        topIngresos: [
+                            { $group: { _id: '$codigoMaquina', totalIngresos: { $sum: '$valorPulso' } } },
+                            { $sort: { totalIngresos: -1 } },
+                            { $limit: 5 },
+                            { $project: { _id: 0, codigo: '$_id', totalIngresos: 1 } }
+                        ],
+                        topPulsos: [
+                            { $group: { _id: '$codigoMaquina', totalPulsos: { $sum: 1 } } },
+                            { $sort: { totalPulsos: -1 } },
+                            { $limit: 5 },
+                            { $project: { _id: 0, codigo: '$_id', totalPulsos: 1 } }
+                        ]
                     }
                 }
             ]),
-
-            // Gráfica de tendencia
-            Pulso.aggregate([
-                { $match: filtroPulsos },
-                { $group: { 
-                    _id: { $dateToString: { format: '%Y-%m-%d', date: '$fechaHora' } },
-                    pulsos: { $sum: 1 },
-                    ingresos: { $sum: '$valorPulso' }
-                }},
-                { $sort: { _id: 1 } },
-                { $project: { _id: 0, fecha: '$_id', pulsos: 1, ingresos: 1 } }
-            ]),
-
-            // Gráfica de distribución horaria
-            Pulso.aggregate([
-                { $match: filtroPulsos },
-                { $group: { 
-                    _id: { $hour: { date: '$fechaHora', timezone: 'Europe/Madrid' } }, 
-                    pulsos: { $sum: 1 } 
-                }},
-                { $sort: { _id: 1 } },
-                { $project: { _id: 0, hora: '$_id', pulsos: 1 } }
-            ]),
-            
-            // Top 5 máquinas con más ingresos
-            Pulso.aggregate([
-                { $match: filtroPulsos },
-                { $group: {
-                    _id: '$maquina',
-                    totalIngresos: { $sum: '$valorPulso' },
-                    totalPulsos: { $sum: 1 },
-                    ultimaActividad: { $max: '$fechaHora' }
-                }},
-                { $sort: { totalIngresos: -1 } },
-                { $limit: 5 },
-                { $lookup: {
-                    from: 'maquinas',
-                    localField: '_id',
-                    foreignField: '_id',
-                    as: 'infoMaquina'
-                }},
-                { $unwind: '$infoMaquina' },
-                { $project: {
-                    _id: 0,
-                    codigo: '$infoMaquina.codigoMaquina',
-                    nombre: '$infoMaquina.nombre',
-                    region: '$infoMaquina.region',
-                    estado: '$infoMaquina.estado',
-                    totalIngresos: 1,
-                    totalPulsos: 1,
-                    ultimaActividad: 1
-                }}
+            Maquina.aggregate([
+                { $match: filtroMaquina },
+                { $group: { _id: '$estado.operativo', cantidad: { $sum: 1 } } },
+                { $project: { _id: 0, estado: '$_id', cantidad: 1 } }
             ])
         ]);
 
-        // --- 4. MÉTRICAS DE MÁQUINAS ---
-        const distribucionEstados = await Maquina.aggregate([
-            { $match: filtroMaquina },
-            { $group: { _id: '$estado', cantidad: { $sum: 1 } } },
-            { $project: { _id: 0, estado: '$_id', cantidad: 1 } }
-        ]);
-
-        // --- 5. CONSTRUIR RESPUESTA --- 
-        const metricas = pulsosAgregados[0] || { totalPulsos: 0, totalIngresos: 0, maquinasActivas: [] };
+        // --- 3. CONSTRUIR RESPUESTA ---
+        const data = agregados[0];
+        const metricasBase = data.metricas[0] || { totalPulsos: 0, totalIngresos: 0, maquinasActivas: [] };
 
         res.json({
             metricas: {
-                pulsos: metricas.totalPulsos,
-                ingresos: metricas.totalIngresos,
-                maquinasActivas: metricas.maquinasActivas.length,
-                totalMaquinas: maquinas.length
+                pulsos: metricasBase.totalPulsos,
+                ingresos: metricasBase.totalIngresos,
+                maquinasActivas: metricasBase.maquinasActivas.length,
+                totalMaquinas: maquinas.length,
+                ingresoPromedio: metricasBase.maquinasActivas.length > 0 ? metricasBase.totalIngresos / metricasBase.maquinasActivas.length : 0,
             },
             graficas: {
-                tendencia: tendencia,
-                distribucionHoraria: distribucionHoraria,
+                tendencia: data.tendencia,
+                distribucionHoraria: data.distribucionHoraria,
+                ingresosPorRegion: data.ingresosPorRegion,
             },
             maquinas: {
                 total: maquinas.length,
-                distribucion: distribucionEstados
+                distribucion: distribucionEstados,
             },
-            topMaquinas: topMaquinas
+            topMaquinas: {
+                porIngresos: data.topIngresos,
+                porPulsos: data.topPulsos,
+            },
         });
 
     } catch (error) {
         console.error('Error en GET /dashboard:', error);
-        res.status(500).json({ error: 'Error interno del servidor al procesar los datos del dashboard.' });
+        res.status(500).json({ error: 'Error interno del servidor.' });
     }
 });
 
