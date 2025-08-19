@@ -43,6 +43,7 @@ router.get('/', async (req, res) => {
 
         // Ejecutar consulta
         const locales = await Local.find(filtros)
+            .populate('tipoEstablecimiento', 'nombre icono') // Poblar el tipo de establecimiento
             .sort(ordenamiento)
             .limit(parseInt(limite))
             .skip(skip)
@@ -82,7 +83,7 @@ router.get('/:codigo', async (req, res) => {
         const local = await Local.findOne({ 
             codigoLocal: codigo.toUpperCase(),
             activo: true 
-        });
+        }).populate('tipoEstablecimiento', 'nombre descripcion icono');
 
         if (!local) {
             return res.status(404).json({
@@ -224,7 +225,7 @@ router.put('/:codigo', async (req, res) => {
                 new: true, 
                 runValidators: true 
             }
-        );
+        ).populate('tipoEstablecimiento', 'nombre icono');
 
         if (!local) {
             return res.status(404).json({

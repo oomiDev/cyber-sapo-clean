@@ -9,9 +9,17 @@ document.addEventListener('DOMContentLoaded', function() {
     cargarLocales();
     cargarMaquinas();
     cargarRegionesParaSelects();
-    
+    cargarTiposMaquina();
+    cargarTiposEstablecimiento();
+    cargarTiposEstablecimientoParaSelects();
+
     // Configurar formularios
-    document.getElementById('formRegion').addEventListener('submit', guardarRegion);
+    document.getElementById('form-region').addEventListener('submit', guardarRegion);
+    document.getElementById('cancelar-edicion-region').addEventListener('click', cancelarEdicionRegion);
+    document.getElementById('form-tipo-maquina').addEventListener('submit', guardarTipoMaquina);
+    document.getElementById('cancelar-edicion-tipo-maquina').addEventListener('click', cancelarEdicionTipoMaquina);
+    document.getElementById('form-tipo-establecimiento').addEventListener('submit', guardarTipoEstablecimiento);
+    document.getElementById('cancelar-edicion-tipo-establecimiento').addEventListener('click', cancelarEdicionTipoEstablecimiento);
     document.getElementById('formLocal').addEventListener('submit', guardarLocal);
     document.getElementById('formMaquina').addEventListener('submit', guardarMaquina);
 });
@@ -90,24 +98,33 @@ function actualizarTablaRegiones(regiones) {
     `).join('');
 }
 
-// Guardar nueva región
+// Guardar o actualizar región
 async function guardarRegion(event) {
     event.preventDefault();
     
+    const regionId = document.getElementById('region-id').value;
+    const esEdicion = !!regionId;
+
     const datosRegion = {
-        codigoRegion: document.getElementById('codigoRegion').value,
-        nombre: document.getElementById('nombreRegion').value,
-        descripcion: document.getElementById('descripcionRegion').value,
-        color: document.getElementById('colorRegion').value,
-        icono: document.getElementById('iconoRegion').value,
-        orden: parseInt(document.getElementById('ordenRegion').value) || 0,
-        notas: document.getElementById('notasRegion').value,
-        creadoPor: 'Admin'
+        nombre: document.getElementById('region-nombre').value,
+        descripcion: document.getElementById('region-descripcion').value,
+        color: document.getElementById('region-color').value,
+        icono: document.getElementById('region-icono').value,
+        orden: parseInt(document.getElementById('region-orden').value) || 0,
+        notas: document.getElementById('region-notas').value,
     };
 
+    if (!esEdicion) {
+        datosRegion.codigoRegion = document.getElementById('region-codigo').value;
+        datosRegion.creadoPor = 'Admin';
+    }
+
+    const url = esEdicion ? `/api/regiones/${regionId}` : '/api/regiones';
+    const method = esEdicion ? 'PUT' : 'POST';
+
     try {
-        const response = await fetch('/api/regiones', {
-            method: 'POST',
+        const response = await fetch(url, {
+            method: method,
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -117,18 +134,16 @@ async function guardarRegion(event) {
         const resultado = await response.json();
 
         if (response.ok) {
-            mostrarExito('Región guardada exitosamente');
-            document.getElementById('formRegion').reset();
-            document.getElementById('colorRegion').value = '#2563eb';
-            document.getElementById('ordenRegion').value = '0';
+            mostrarExito(`Región ${esEdicion ? 'actualizada' : 'creada'} exitosamente`);
+            cancelarEdicionRegion();
             cargarRegiones();
             cargarRegionesParaSelects();
         } else {
-            mostrarError('Error al guardar región: ' + resultado.error);
+            mostrarError(`Error al ${esEdicion ? 'actualizar' : 'crear'} región: ${resultado.mensaje || resultado.error}`);
         }
     } catch (error) {
         console.error('Error:', error);
-        mostrarError('Error de conexión al guardar región');
+        mostrarError(`Error de conexión al ${esEdicion ? 'actualizar' : 'crear'} región`);
     }
 }
 
@@ -212,9 +227,40 @@ async function toggleRegion(codigo, activar) {
     }
 }
 
-// Editar región
+// Cargar datos de región en el formulario para editar
 function editarRegion(codigo) {
-    alert('Función de edición en desarrollo para región: ' + codigo);
+    const region = regionesData.find(r => r.codigoRegion === codigo);
+    if (!region) {
+        mostrarError('No se encontró la región para editar.');
+        return;
+    }
+
+    document.getElementById('region-id').value = region.codigoRegion;
+    document.getElementById('region-codigo').value = region.codigoRegion;
+    document.getElementById('region-codigo').disabled = true;
+    document.getElementById('region-nombre').value = region.nombre;
+    document.getElementById('region-descripcion').value = region.descripcion || '';
+    document.getElementById('region-color').value = region.color || '#2563eb';
+    document.getElementById('region-icono').value = region.icono || 'fas fa-map-marker-alt';
+    document.getElementById('region-orden').value = region.orden || 0;
+    document.getElementById('region-notas').value = region.notas || '';
+
+    document.getElementById('region-form-title').textContent = 'Editar Región';
+    document.getElementById('cancelar-edicion-region').style.display = 'inline-block';
+    
+    // Scroll al formulario
+    document.getElementById('form-region').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Cancelar edición y limpiar formulario de región
+function cancelarEdicionRegion() {
+    document.getElementById('form-region').reset();
+    document.getElementById('region-id').value = '';
+    document.getElementById('region-codigo').disabled = false;
+    document.getElementById('region-form-title').textContent = 'Crear Nueva Región';
+    document.getElementById('cancelar-edicion-region').style.display = 'none';
+    document.getElementById('colorRegion').value = '#2563eb';
+    document.getElementById('ordenRegion').value = '0';
 }
 
 // Eliminar región
@@ -240,6 +286,264 @@ async function eliminarRegion(codigo) {
     } catch (error) {
         console.error('Error:', error);
         mostrarError('Error de conexión al eliminar región');
+    }
+}
+
+// ==================== GESTIÓN DE TIPOS DE MÁQUINA ====================
+
+let tiposMaquinaData = [];
+
+async function cargarTiposMaquina() {
+    try {
+        const response = await fetch('/api/tipos-maquina');
+        if (!response.ok) throw new Error('Error al cargar tipos de máquina');
+        tiposMaquinaData = await response.json();
+        renderizarTiposMaquina(tiposMaquinaData);
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarError(error.message);
+    }
+}
+
+function renderizarTiposMaquina(tipos) {
+    const tbody = document.getElementById('tabla-tipos-maquina');
+    tbody.innerHTML = '';
+    if (tipos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay tipos de máquina registrados.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = tipos.map(tipo => `
+        <tr>
+            <td>${tipo.codigo}</td>
+            <td>${tipo.nombre}</td>
+            <td>${tipo.descripcion || ''}</td>
+            <td>0</td> <!-- Placeholder -->
+            <td>
+                <span class="badge bg-${tipo.activo ? 'success' : 'secondary'}">${tipo.activo ? 'Activo' : 'Inactivo'}</span>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary btn-action" onclick="editarTipoMaquina('${tipo._id}')"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-sm btn-outline-danger btn-action" onclick="eliminarTipoMaquina('${tipo._id}')"><i class="fas fa-trash"></i></button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+async function guardarTipoMaquina(event) {
+    event.preventDefault();
+    const id = document.getElementById('tipo-maquina-id').value;
+    const esEdicion = !!id;
+
+    const data = {
+        codigo: document.getElementById('tipo-maquina-codigo').value,
+        nombre: document.getElementById('tipo-maquina-nombre').value,
+        descripcion: document.getElementById('tipo-maquina-descripcion').value,
+    };
+
+    const url = esEdicion ? `/api/tipos-maquina/${id}` : '/api/tipos-maquina';
+    const method = esEdicion ? 'PUT' : 'POST';
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const resultado = await response.json();
+        if (response.ok) {
+            mostrarExito(`Tipo de máquina ${esEdicion ? 'actualizado' : 'creado'} con éxito.`);
+            cancelarEdicionTipoMaquina();
+            cargarTiposMaquina();
+        } else {
+            mostrarError(resultado.message || 'Error al guardar el tipo de máquina.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarError('Error de conexión al guardar.');
+    }
+}
+
+function editarTipoMaquina(id) {
+    const tipo = tiposMaquinaData.find(t => t._id === id);
+    if (!tipo) return;
+
+    document.getElementById('tipo-maquina-id').value = tipo._id;
+    document.getElementById('tipo-maquina-codigo').value = tipo.codigo;
+    document.getElementById('tipo-maquina-codigo').disabled = true;
+    document.getElementById('tipo-maquina-nombre').value = tipo.nombre;
+    document.getElementById('tipo-maquina-descripcion').value = tipo.descripcion || '';
+    
+    document.getElementById('tipo-maquina-form-title').textContent = 'Editar Tipo de Máquina';
+    document.getElementById('cancelar-edicion-tipo-maquina').style.display = 'inline-block';
+    document.getElementById('form-tipo-maquina').scrollIntoView({ behavior: 'smooth' });
+}
+
+function cancelarEdicionTipoMaquina() {
+    document.getElementById('form-tipo-maquina').reset();
+    document.getElementById('tipo-maquina-id').value = '';
+    document.getElementById('tipo-maquina-codigo').disabled = false;
+    document.getElementById('tipo-maquina-form-title').textContent = 'Crear Nuevo Tipo de Máquina';
+    document.getElementById('cancelar-edicion-tipo-maquina').style.display = 'none';
+}
+
+async function eliminarTipoMaquina(id) {
+    if (!confirm('¿Está seguro de eliminar este tipo de máquina?')) return;
+
+    try {
+        const response = await fetch(`/api/tipos-maquina/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+            mostrarExito('Tipo de máquina eliminado con éxito.');
+            cargarTiposMaquina();
+        } else {
+            const resultado = await response.json();
+            mostrarError(resultado.message || 'Error al eliminar.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarError('Error de conexión al eliminar.');
+    }
+}
+
+// ==================== GESTIÓN DE TIPOS DE ESTABLECIMIENTO ====================
+
+let tiposEstablecimientoData = [];
+
+async function cargarTiposEstablecimiento() {
+    try {
+        const response = await fetch('/api/tipos-establecimiento');
+        if (!response.ok) throw new Error('Error al cargar tipos de establecimiento');
+        tiposEstablecimientoData = await response.json();
+        renderizarTiposEstablecimiento(tiposEstablecimientoData);
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarError(error.message);
+    }
+}
+
+function renderizarTiposEstablecimiento(tipos) {
+    const tbody = document.getElementById('tabla-tipos-establecimiento');
+    tbody.innerHTML = '';
+    if (tipos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay tipos de establecimiento registrados.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = tipos.map(tipo => `
+        <tr>
+            <td>${tipo.nombre}</td>
+            <td>${tipo.descripcion || ''}</td>
+            <td><i class="${tipo.icono || 'fas fa-store'}"></i> ${tipo.icono}</td>
+            <td>0</td> <!-- Placeholder -->
+            <td>
+                <span class="badge bg-${tipo.activo ? 'success' : 'secondary'}">${tipo.activo ? 'Activo' : 'Inactivo'}</span>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary btn-action" onclick="editarTipoEstablecimiento('${tipo._id}')"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-sm btn-outline-danger btn-action" onclick="eliminarTipoEstablecimiento('${tipo._id}')"><i class="fas fa-trash"></i></button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+async function guardarTipoEstablecimiento(event) {
+    event.preventDefault();
+    const id = document.getElementById('tipo-establecimiento-id').value;
+    const esEdicion = !!id;
+
+    const data = {
+        nombre: document.getElementById('tipo-establecimiento-nombre').value,
+        descripcion: document.getElementById('tipo-establecimiento-descripcion').value,
+        icono: document.getElementById('tipo-establecimiento-icono').value,
+    };
+
+    const url = esEdicion ? `/api/tipos-establecimiento/${id}` : '/api/tipos-establecimiento';
+    const method = esEdicion ? 'PUT' : 'POST';
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const resultado = await response.json();
+        if (response.ok) {
+            mostrarExito(`Tipo de establecimiento ${esEdicion ? 'actualizado' : 'creado'} con éxito.`);
+            cancelarEdicionTipoEstablecimiento();
+            cargarTiposEstablecimiento();
+        } else {
+            mostrarError(resultado.message || 'Error al guardar el tipo.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarError('Error de conexión al guardar.');
+    }
+}
+
+function editarTipoEstablecimiento(id) {
+    const tipo = tiposEstablecimientoData.find(t => t._id === id);
+    if (!tipo) return;
+
+    document.getElementById('tipo-establecimiento-id').value = tipo._id;
+    document.getElementById('tipo-establecimiento-nombre').value = tipo.nombre;
+    document.getElementById('tipo-establecimiento-descripcion').value = tipo.descripcion || '';
+    document.getElementById('tipo-establecimiento-icono').value = tipo.icono || 'fas fa-store';
+    
+    document.getElementById('tipo-establecimiento-form-title').textContent = 'Editar Tipo de Establecimiento';
+    document.getElementById('cancelar-edicion-tipo-establecimiento').style.display = 'inline-block';
+    document.getElementById('form-tipo-establecimiento').scrollIntoView({ behavior: 'smooth' });
+}
+
+function cancelarEdicionTipoEstablecimiento() {
+    document.getElementById('form-tipo-establecimiento').reset();
+    document.getElementById('tipo-establecimiento-id').value = '';
+    document.getElementById('tipo-establecimiento-form-title').textContent = 'Crear Nuevo Tipo de Establecimiento';
+    document.getElementById('cancelar-edicion-tipo-establecimiento').style.display = 'none';
+}
+
+async function eliminarTipoEstablecimiento(id) {
+    if (!confirm('¿Está seguro de eliminar este tipo de establecimiento?')) return;
+
+    try {
+        const response = await fetch(`/api/tipos-establecimiento/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+            mostrarExito('Tipo de establecimiento eliminado con éxito.');
+            cargarTiposEstablecimiento();
+        } else {
+            const resultado = await response.json();
+            mostrarError(resultado.message || 'Error al eliminar.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarError('Error de conexión al eliminar.');
+    }
+}
+
+async function cargarTiposEstablecimientoParaSelects() {
+    try {
+        const response = await fetch('/api/tipos-establecimiento');
+        if (!response.ok) throw new Error('Error al cargar tipos de establecimiento para selects');
+        const tipos = await response.json();
+
+        const selects = ['tipoEstablecimiento', 'filtroTipoLocales'];
+        selects.forEach(selectId => {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+
+            const esFiltro = selectId.includes('filtro');
+            select.innerHTML = esFiltro ? '<option value="">Todos los tipos</option>' : '<option value="">Seleccionar tipo</option>';
+            
+            tipos.forEach(tipo => {
+                if (tipo.activo) {
+                    select.innerHTML += `<option value="${tipo._id}">${tipo.nombre}</option>`;
+                }
+            });
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarError(error.message);
     }
 }
 
@@ -284,7 +588,7 @@ function actualizarTablaLocales(locales) {
         <tr>
             <td><strong>${local.codigoLocal}</strong></td>
             <td>${local.nombre}</td>
-            <td>${local.tipoEstablecimiento}</td>
+            <td>${local.tipoEstablecimiento?.nombre || 'N/A'}</td>
             <td>${local.ubicacion?.region || 'N/A'}</td>
             <td>
                 <span class="badge bg-info">${local.estadisticas?.totalMaquinas || 0}</span>

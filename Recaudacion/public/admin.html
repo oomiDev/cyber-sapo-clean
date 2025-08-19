@@ -30,6 +30,12 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="regiones-tab" data-bs-toggle="tab" data-bs-target="#regiones-panel" type="button" role="tab">Gestión de Regiones</button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tipos-maquina-tab" data-bs-toggle="tab" data-bs-target="#tipos-maquina-panel" type="button" role="tab">Tipos de Máquina</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tipos-establecimiento-tab" data-bs-toggle="tab" data-bs-target="#tipos-establecimiento-panel" type="button" role="tab">Tipos de Establecimiento</button>
+            </li>
         </ul>
 
         <div class="tab-content" id="adminTabContent">
@@ -250,6 +256,193 @@
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="regiones-panel" role="tabpanel">
+                <!-- Formulario de Creación/Edición de Región -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 id="region-form-title">Crear Nueva Región</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="form-region">
+                            <input type="hidden" id="region-id">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="region-codigo" class="form-label">Código de Región</label>
+                                    <input type="text" class="form-control" id="region-codigo" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="region-nombre" class="form-label">Nombre</label>
+                                    <input type="text" class="form-control" id="region-nombre" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="region-descripcion" class="form-label">Descripción</label>
+                                <textarea class="form-control" id="region-descripcion" rows="2"></textarea>
+                            </div>
+                            <div class="row">
+                                 <div class="col-md-4 mb-3">
+                                    <label for="region-color" class="form-label">Color</label>
+                                    <input type="color" class="form-control form-control-color" id="region-color" value="#2563eb" title="Elige un color">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="region-icono" class="form-label">Icono (Font Awesome)</label>
+                                    <input type="text" class="form-control" id="region-icono" placeholder="e.g., fas fa-map-marker-alt">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="region-orden" class="form-label">Orden</label>
+                                    <input type="number" class="form-control" id="region-orden" value="0">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="region-notas" class="form-label">Notas Internas</label>
+                                <textarea class="form-control" id="region-notas" rows="2"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Guardar Región</button>
+                            <button type="button" class="btn btn-secondary" id="cancelar-edicion-region" style="display: none;">Cancelar</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Tabla de Regiones Existentes -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Regiones Existentes</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Nombre</th>
+                                        <th>Descripción</th>
+                                        <th>Locales</th>
+                                        <th>Máquinas</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-regiones">
+                                    <!-- Las filas de regiones se insertarán aquí dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="tipos-maquina-panel" role="tabpanel">
+                <!-- Formulario de Creación/Edición de Tipo de Máquina -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 id="tipo-maquina-form-title">Crear Nuevo Tipo de Máquina</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="form-tipo-maquina">
+                            <input type="hidden" id="tipo-maquina-id">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="tipo-maquina-codigo" class="form-label">Código</label>
+                                    <input type="text" class="form-control" id="tipo-maquina-codigo" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="tipo-maquina-nombre" class="form-label">Nombre</label>
+                                    <input type="text" class="form-control" id="tipo-maquina-nombre" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="tipo-maquina-descripcion" class="form-label">Descripción</label>
+                                <textarea class="form-control" id="tipo-maquina-descripcion" rows="2"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Guardar Tipo de Máquina</button>
+                            <button type="button" class="btn btn-secondary" id="cancelar-edicion-tipo-maquina" style="display: none;">Cancelar</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Tabla de Tipos de Máquina Existentes -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Tipos de Máquina Existentes</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Nombre</th>
+                                        <th>Descripción</th>
+                                        <th>Máquinas Asoc.</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-tipos-maquina">
+                                    <!-- Las filas se insertarán aquí dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="tipos-establecimiento-panel" role="tabpanel">
+                <!-- Formulario de Creación/Edición de Tipo de Establecimiento -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 id="tipo-establecimiento-form-title">Crear Nuevo Tipo de Establecimiento</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="form-tipo-establecimiento">
+                            <input type="hidden" id="tipo-establecimiento-id">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="tipo-establecimiento-nombre" class="form-label">Nombre</label>
+                                    <input type="text" class="form-control" id="tipo-establecimiento-nombre" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="tipo-establecimiento-icono" class="form-label">Icono (Font Awesome)</label>
+                                    <input type="text" class="form-control" id="tipo-establecimiento-icono" placeholder="e.g., fas fa-store">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="tipo-establecimiento-descripcion" class="form-label">Descripción</label>
+                                <textarea class="form-control" id="tipo-establecimiento-descripcion" rows="2"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Guardar Tipo</button>
+                            <button type="button" class="btn btn-secondary" id="cancelar-edicion-tipo-establecimiento" style="display: none;">Cancelar</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Tabla de Tipos de Establecimiento Existentes -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Tipos de Establecimiento Existentes</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Descripción</th>
+                                        <th>Icono</th>
+                                        <th>Locales Asoc.</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-tipos-establecimiento">
+                                    <!-- Las filas se insertarán aquí dinámicamente -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>

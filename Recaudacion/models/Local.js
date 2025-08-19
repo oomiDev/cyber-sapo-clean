@@ -35,28 +35,9 @@ const localSchema = new mongoose.Schema({
 
     // TIPO DE ESTABLECIMIENTO
     tipoEstablecimiento: {
-        type: String,
-        required: [true, 'El tipo de establecimiento es obligatorio'],
-        enum: {
-            values: [
-                'Oficina', 
-                'Escuela', 
-                'Universidad',
-                'Hospital', 
-                'Centro Comercial', 
-                'Fábrica', 
-                'Restaurante',
-                'Hotel',
-                'Gimnasio',
-                'Estación de Servicio',
-                'Aeropuerto',
-                'Estación de Tren',
-                'Centro Deportivo',
-                'Biblioteca',
-                'Otro'
-            ],
-            message: 'Tipo de establecimiento inválido'
-        }
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'TipoEstablecimiento',
+        required: [true, 'El tipo de establecimiento es obligatorio']
     },
 
     // UBICACIÓN GEOGRÁFICA COMPLETA

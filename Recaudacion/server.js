@@ -18,6 +18,8 @@ const maquinasRoutes = require('./routes/maquinas');
 const pulsosRoutes = require('./routes/pulsos');
 const analyticsRoutes = require('./routes/analytics');
 const authRoutes = require('./routes/auth');
+const tiposMaquinaRoutes = require('./routes/tiposMaquina');
+const tiposEstablecimientoRoutes = require('./routes/tiposEstablecimiento');
 
 // Crear aplicación Express
 const app = express();
@@ -121,6 +123,8 @@ app.use('/api/locales', localesRoutes);
 app.use('/api/maquinas', maquinasRoutes);
 app.use('/api/pulsos', pulsosRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/tipos-maquina', tiposMaquinaRoutes);
+app.use('/api/tipos-establecimiento', tiposEstablecimientoRoutes);
 
 // Middleware para rutas no encontradas
 app.use('*', (req, res) => {
