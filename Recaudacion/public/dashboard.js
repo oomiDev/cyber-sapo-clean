@@ -38,14 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
             populateSelect(maquinaFilter, data.codigosMaquina);
         } catch (error) {
             console.error('Error al inicializar filtros:', error);
-            // Puedes mostrar un mensaje al usuario aquí si lo deseas
         }
     };
 
     // Cargar y renderizar los datos de la tabla
     const loadTableData = async () => {
-        loaderContainer.style.display = 'flex';
-        tableBody.innerHTML = '';
+        if (loaderContainer) loaderContainer.style.display = 'flex';
+        if (tableBody) tableBody.innerHTML = '';
 
         const params = new URLSearchParams();
         if (regionFilter.value) params.append('region', regionFilter.value);
@@ -60,39 +59,41 @@ document.addEventListener('DOMContentLoaded', () => {
             const { dataTable } = await response.json();
 
             if (!dataTable || dataTable.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="7" class="text-center">No se encontraron resultados.</td></tr>';
-                totalIngresosEl.textContent = '0.00 €';
-                totalPulsosEl.textContent = '0';
-                totalMaquinasEl.textContent = '0';
+                if (tableBody) tableBody.innerHTML = '<tr><td colspan="7" class="text-center">No se encontraron resultados.</td></tr>';
+                if (totalIngresosEl) totalIngresosEl.textContent = '0.00 €';
+                if (totalPulsosEl) totalPulsosEl.textContent = '0';
+                if (totalMaquinasEl) totalMaquinasEl.textContent = '0';
                 return;
             }
 
-            dataTable.forEach(row => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${row.codigoMaquina || 'N/A'}</td>
-                    <td>${row.nombre || 'N/A'}</td>
-                    <td>${row.ubicacion?.region || 'N/A'}</td>
-                    <td>${row.ubicacion?.ciudad || 'N/A'}</td>
-                    <td><span class="badge bg-${row.estado?.operativo === 'Activa' ? 'success' : 'danger'} p-2">${row.estado?.operativo || 'Inactivo'}</span></td>
-                    <td>${(row.ingresos || 0).toFixed(2)} €</td>
-                    <td>${row.pulsos || 0}</td>
-                `;
-                tableBody.appendChild(tr);
-            });
+            if (tableBody) {
+                dataTable.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${row.codigoMaquina || 'N/A'}</td>
+                        <td>${row.nombre || 'N/A'}</td>
+                        <td>${row.ubicacion?.region || 'N/A'}</td>
+                        <td>${row.ubicacion?.ciudad || 'N/A'}</td>
+                        <td><span class="badge bg-${row.estado?.operativo === 'Activa' ? 'success' : 'danger'} p-2">${row.estado?.operativo || 'Inactivo'}</span></td>
+                        <td>${(row.ingresos || 0).toFixed(2)} €</td>
+                        <td>${row.pulsos || 0}</td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            }
 
             // Actualizar resumen
             const totalIngresos = dataTable.reduce((sum, row) => sum + (row.ingresos || 0), 0);
             const totalPulsos = dataTable.reduce((sum, row) => sum + (row.pulsos || 0), 0);
-            totalIngresosEl.textContent = `${totalIngresos.toFixed(2)} €`;
-            totalPulsosEl.textContent = totalPulsos;
-            totalMaquinasEl.textContent = dataTable.length;
+            if (totalIngresosEl) totalIngresosEl.textContent = `${totalIngresos.toFixed(2)} €`;
+            if (totalPulsosEl) totalPulsosEl.textContent = totalPulsos;
+            if (totalMaquinasEl) totalMaquinasEl.textContent = dataTable.length;
 
         } catch (error) {
             console.error('Error al cargar la tabla:', error);
-            tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error al cargar los datos: ${error.message}</td></tr>`;
+            if (tableBody) tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error al cargar los datos: ${error.message}</td></tr>`;
         } finally {
-            loaderContainer.style.display = 'none';
+            if (loaderContainer) loaderContainer.style.display = 'none';
         }
     };
 
@@ -100,13 +101,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const init = () => {
         const today = new Date();
         const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        startDate.value = firstDayOfMonth.toISOString().split('T')[0];
-        endDate.value = today.toISOString().split('T')[0];
+        if (startDate) startDate.value = firstDayOfMonth.toISOString().split('T')[0];
+        if (endDate) endDate.value = today.toISOString().split('T')[0];
 
         loadFilters();
         loadTableData();
 
-        applyFiltersBtn.addEventListener('click', loadTableData);
+        if (applyFiltersBtn) applyFiltersBtn.addEventListener('click', loadTableData);
     };
 
     init();
