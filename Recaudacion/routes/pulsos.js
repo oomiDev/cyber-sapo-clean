@@ -77,13 +77,28 @@ router.post('/recibir', async (req, res) => {
         const valorFinal = valor || maquina.configuracion.valorPorPulso;
 
         // PASO 5: Crear registro del pulso
+        const fecha = new Date();
+        const año = fecha.getFullYear();
+        const mes = fecha.getMonth() + 1;
+        const inicioAño = new Date(año, 0, 1);
+        const diasTranscurridos = Math.floor((fecha - inicioAño) / (24 * 60 * 60 * 1000));
+
         const nuevoPulso = new Pulso({
-            temporal: {}, // Inicializar para que el middleware pre-save funcione
             maquina: maquina._id,
             codigoMaquina: maquina.codigoMaquina,
-            valorPulso: valorFinal, // El modelo espera 'valorPulso'
+            valorPulso: valorFinal,
             moneda: maquina.configuracion.moneda,
-            fechaHora: new Date(),
+            fechaHora: fecha,
+            temporal: {
+                año: año,
+                mes: mes,
+                dia: fecha.getDate(),
+                diaSemana: fecha.getDay(),
+                hora: fecha.getHours(),
+                minuto: fecha.getMinutes(),
+                trimestre: Math.ceil(mes / 3),
+                semanaAño: Math.ceil((diasTranscurridos + inicioAño.getDay() + 1) / 7)
+            },
             ubicacion: {
                 region: maquina.ubicacion.region,
                 ciudad: maquina.ubicacion.ciudad,
@@ -93,7 +108,7 @@ router.post('/recibir', async (req, res) => {
                 ipOrigen: req.ip || 'No disponible',
                 userAgent: req.get('User-Agent') || 'No disponible',
                 numeroSecuencia: numeroSecuencia,
-                tiempoProcesamiento: 0 // Se calculará al final
+                tiempoProcesamiento: 0
             }
         });
 

@@ -211,30 +211,6 @@ pulsoSchema.index({ 'temporal.año': 1, 'temporal.dia': 1 }); // Agregaciones di
 pulsoSchema.index({ 'temporal.hora': 1 }); // Análisis por horas del día
 pulsoSchema.index({ fechaHora: -1, activo: 1 }); // Pulsos recientes activos
 
-// MIDDLEWARE PRE-SAVE: Calcular campos temporales automáticamente
-pulsoSchema.pre('save', function(next) {
-    if (this.isNew || this.isModified('fechaHora')) {
-        const fecha = new Date(this.fechaHora);
-        
-        // Calcular todos los campos temporales
-        this.temporal.año = fecha.getFullYear();
-        this.temporal.mes = fecha.getMonth() + 1; // getMonth() devuelve 0-11
-        this.temporal.dia = fecha.getDate();
-        this.temporal.diaSemana = fecha.getDay(); // 0=Domingo
-        this.temporal.hora = fecha.getHours();
-        this.temporal.minuto = fecha.getMinutes();
-        
-        // Calcular trimestre
-        this.temporal.trimestre = Math.ceil(this.temporal.mes / 3);
-        
-        // Calcular semana del año
-        const inicioAño = new Date(fecha.getFullYear(), 0, 1);
-        const diasTranscurridos = Math.floor((fecha - inicioAño) / (24 * 60 * 60 * 1000));
-        this.temporal.semanaAño = Math.ceil((diasTranscurridos + inicioAño.getDay() + 1) / 7);
-    }
-    
-    next();
-});
 
 // MÉTODOS ESTÁTICOS PARA ANÁLISIS Y REPORTES
 
