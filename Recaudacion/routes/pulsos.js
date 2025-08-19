@@ -89,8 +89,8 @@ router.post('/recibir', async (req, res) => {
                 direccion: maquina.ubicacion.direccion
             },
             metadata: {
-                ipOrigen: req.ip || req.connection.remoteAddress,
-                userAgent: req.get('User-Agent'),
+                ipOrigen: req.ip || 'No disponible',
+                userAgent: req.get('User-Agent') || 'No disponible',
                 numeroSecuencia: numeroSecuencia,
                 tiempoProcesamiento: 0 // Se calculará al final
             }

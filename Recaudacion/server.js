@@ -21,6 +21,7 @@ const authRoutes = require('./routes/auth');
 
 // Crear aplicación Express
 const app = express();
+app.set('trust proxy', 1); // Confiar en el proxy de Render para obtener la IP correcta
 
 // Configuración del puerto
 const PORT = process.env.PORT || 3000;
