@@ -16,6 +16,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Configurar formularios
     document.getElementById('form-region').addEventListener('submit', guardarRegion);
     document.getElementById('cancelar-edicion-region').addEventListener('click', cancelarEdicionRegion);
+
+    // Listeners para filtros de regiones
+    const filtroEstadoRegiones = document.getElementById('filtroEstadoRegiones');
+    const ordenRegiones = document.getElementById('ordenRegiones');
+
+    if (filtroEstadoRegiones) {
+        filtroEstadoRegiones.addEventListener('change', cargarRegiones);
+    }
+    if (ordenRegiones) {
+        ordenRegiones.addEventListener('change', cargarRegiones);
+    }
     document.getElementById('form-tipo-maquina').addEventListener('submit', guardarTipoMaquina);
     document.getElementById('cancelar-edicion-tipo-maquina').addEventListener('click', cancelarEdicionTipoMaquina);
     document.getElementById('form-tipo-establecimiento').addEventListener('submit', guardarTipoEstablecimiento);
@@ -619,7 +630,7 @@ async function guardarLocal(event) {
         nombre: document.getElementById('nombreLocal').value,
         tipoEstablecimiento: document.getElementById('tipoEstablecimiento').value,
         ubicacion: {
-            region: document.getElementById('regionLocal').value,
+            calle: document.getElementById('direccionLocal').value,
             ciudad: document.getElementById('ciudadLocal').value,
             direccion: document.getElementById('direccionLocal').value,
             codigoPostal: document.getElementById('codigoPostal').value,

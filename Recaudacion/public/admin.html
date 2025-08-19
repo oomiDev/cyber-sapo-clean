@@ -188,6 +188,14 @@
                                 </div>
 
                                 <div class="form-section">
+                                    <h6 class="text-primary mb-3">Notas Adicionales</h6>
+                                    <div class="mb-3">
+                                        <label for="notasLocal" class="form-label">Notas</label>
+                                        <textarea class="form-control" id="notasLocal" rows="3" placeholder="Anotaciones internas sobre el local..."></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="form-section">
                                     <h6 class="text-primary mb-3">Contacto</h6>
                                     
                                     <div class="mb-3">
@@ -335,12 +343,12 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Regiones Existentes</h5>
                         <div class="d-flex">
-                            <select id="filtroEstadoRegiones" class="form-select form-select-sm me-2" onchange="cargarRegiones()">
+                            <select id="filtroEstadoRegiones" class="form-select form-select-sm me-2">
                                 <option value="">Todos</option>
                                 <option value="true">Activas</option>
                                 <option value="false">Inactivas</option>
                             </select>
-                            <select id="ordenRegiones" class="form-select form-select-sm" onchange="cargarRegiones()">
+                            <select id="ordenRegiones" class="form-select form-select-sm">
                                 <option value="nombre">Ordenar por Nombre</option>
                                 <option value="codigoRegion">Ordenar por Código</option>
                                 <option value="fechaCreacion">Ordenar por Fecha</option>
