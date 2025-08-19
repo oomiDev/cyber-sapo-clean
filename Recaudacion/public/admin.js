@@ -630,6 +630,7 @@ async function guardarLocal(event) {
         nombre: document.getElementById('nombreLocal').value,
         tipoEstablecimiento: document.getElementById('tipoEstablecimiento').value,
         ubicacion: {
+            region: document.getElementById('regionLocal').value,
             calle: document.getElementById('direccionLocal').value,
             ciudad: document.getElementById('ciudadLocal').value,
             direccion: document.getElementById('direccionLocal').value,
