@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const endDate = document.getElementById('end-date');
     const applyFiltersBtn = document.getElementById('apply-filters');
     const tableBody = document.getElementById('data-table-body');
-    const loader = document.getElementById('loader');
+    const loaderContainer = document.getElementById('loader-container');
     const totalIngresosEl = document.getElementById('total-ingresos');
     const totalPulsosEl = document.getElementById('total-pulsos');
     const totalMaquinasEl = document.getElementById('total-maquinas');
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Cargar y renderizar los datos de la tabla
     const loadTableData = async () => {
-        loader.style.display = 'block';
+        loaderContainer.style.display = 'flex';
         tableBody.innerHTML = '';
 
         const params = new URLSearchParams();
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error al cargar la tabla:', error);
             tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error al cargar los datos: ${error.message}</td></tr>`;
         } finally {
-            loader.style.display = 'none';
+            loaderContainer.style.display = 'none';
         }
     };
 
