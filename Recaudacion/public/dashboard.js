@@ -15,13 +15,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalPulsosEl = document.getElementById('total-pulsos');
     const totalMaquinasEl = document.getElementById('total-maquinas');
 
-    const populateSelect = (element, options) => {
+    const populateSelect = (element, options, { valueKey, textKey }) => {
         element.innerHTML = '<option value="">Todas</option>';
         if (options) {
             options.forEach(option => {
                 const opt = document.createElement('option');
-                opt.value = option;
-                opt.textContent = option;
+                // Si la opción es un objeto, usa las keys, si no, úsala directamente
+                if (typeof option === 'object' && option !== null) {
+                    opt.value = option[valueKey];
+                    opt.textContent = option[textKey];
+                } else {
+                    opt.value = option;
+                    opt.textContent = option;
+                }
                 element.appendChild(opt);
             });
         }
@@ -32,9 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`${API_BASE_URL}/filters`);
             if (!response.ok) throw new Error('Error al cargar filtros');
             const data = await response.json();
-            populateSelect(regionFilter, data.regiones);
-            populateSelect(ciudadFilter, data.ciudades);
-            populateSelect(maquinaFilter, data.codigosMaquina);
+            // Para regiones, usamos el _id como valor y el nombre como texto.
+            populateSelect(regionFilter, data.regiones, { valueKey: '_id', textKey: 'nombre' });
+            
+            // Para ciudades, es un array simple de strings.
+            populateSelect(ciudadFilter, data.ciudades, {});
+
+            // Para máquinas, usamos el _id como valor y el código/nombre como texto.
+            populateSelect(maquinaFilter, data.maquinas, { valueKey: '_id', textKey: 'codigoMaquina' });
         } catch (error) {
             console.error('Error al inicializar filtros:', error);
         }

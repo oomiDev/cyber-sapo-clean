@@ -206,7 +206,7 @@ async function cargarRegionesParaSelects() {
             const selects = [
                 'regionLocal',
                 'regionMaquina', 
-                'filtroRegionLocales',
+                'filtro-region-local',
                 'filtroRegionMaquinas'
             ];
             
@@ -562,7 +562,7 @@ async function cargarTiposEstablecimientoParaSelects() {
         if (!response.ok) throw new Error('Error al cargar tipos de establecimiento para selects');
         const tipos = await response.json();
 
-        const selects = ['tipoEstablecimiento', 'filtroTipoLocales'];
+        const selects = ['tipoEstablecimiento', 'filtro-tipo-local'];
         selects.forEach(selectId => {
             const select = document.getElementById(selectId);
             if (!select) return;
@@ -619,6 +619,37 @@ async function cargarLocales() {
     }
 }
 
+// Función auxiliar para crear el HTML de una fila de local
+function crearFilaLocalHTML(local) {
+    const tipoEstablecimientoNombre = local.tipoEstablecimiento?.nombre || '<span class="text-muted">N/A</span>';
+    const regionNombre = local.ubicacion?.region?.nombre || '<span class="text-muted">N/A</span>';
+    const totalMaquinas = local.estadisticas?.totalMaquinas || 0;
+    const maquinasActivas = local.estadisticas?.maquinasActivas || 0;
+    const totalIngresos = (local.estadisticas?.totalIngresos || 0).toFixed(2);
+
+    return `
+        <tr>
+            <td><strong>${local.codigoLocal}</strong></td>
+            <td>${local.nombre}</td>
+            <td>${tipoEstablecimientoNombre}</td>
+            <td>${regionNombre}</td>
+            <td>
+                <span class="badge bg-info">${totalMaquinas}</span>
+                <small class="text-muted">(${maquinasActivas} activas)</small>
+            </td>
+            <td>€${totalIngresos}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary btn-action" onclick="editarLocal('${local.codigoLocal}')" title="Editar Local">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger btn-action" onclick="eliminarLocal('${local.codigoLocal}')" title="Eliminar Local">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
 // Actualizar tabla de locales
 function actualizarTablaLocales(locales) {
     const tbody = document.getElementById('tablaLocales');
@@ -628,44 +659,11 @@ function actualizarTablaLocales(locales) {
     }
 
     if (!locales || locales.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay locales registrados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay locales que coincidan con los filtros.</td></tr>';
         return;
     }
 
-    const filasHtml = locales.map(local => {
-        const tipoEstablecimientoNombre = local.tipoEstablecimiento?.nombre || 'No especificado';
-        const regionNombre = local.ubicacion?.region?.nombre || 'No especificada';
-        const totalMaquinas = local.estadisticas?.totalMaquinas || 0;
-        const maquinasActivas = local.estadisticas?.maquinasActivas || 0;
-        const totalIngresos = (local.estadisticas?.totalIngresos || 0).toFixed(2);
-
-        return `
-            <tr>
-                <td><strong>${local.codigoLocal}</strong></td>
-                <td>${local.nombre}</td>
-                <td>${tipoEstablecimientoNombre}</td>
-                <td>${regionNombre}</td>
-                <td>
-                    <span class="badge bg-info">${totalMaquinas}</span>
-                    <small class="text-muted">(${maquinasActivas} activas)</small>
-                </td>
-                <td>€${totalIngresos}</td>
-                <td>
-                    <button class="btn btn-sm btn-outline-primary btn-action" onclick="editarLocal('${local.codigoLocal}')">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-info btn-action" onclick="verDetallesLocal('${local.codigoLocal}')">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger btn-action" onclick="eliminarLocal('${local.codigoLocal}')">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `;
-    }).join('');
-
-    tbody.innerHTML = filasHtml;
+    tbody.innerHTML = locales.map(crearFilaLocalHTML).join('');
 }
 
 async function guardarLocal(event) {
@@ -727,26 +725,29 @@ async function guardarLocal(event) {
     }
 }
 
-// Buscar locales
-function buscarLocales() {
-    const termino = document.getElementById('buscarLocal').value.toLowerCase();
-    const localesFiltrados = localesData.filter(local => 
-        local.nombre.toLowerCase().includes(termino) ||
-        local.codigoLocal.toLowerCase().includes(termino)
-    );
-    actualizarTablaLocales(localesFiltrados);
-}
-
 // Cargar locales para el select de máquinas
 async function cargarLocalesParaSelect() {
+    const select = document.getElementById('localExistente');
+    if (!select) return;
+
+    // Reutilizar datos si ya están cargados
+    if (localesData && localesData.length > 0) {
+        select.innerHTML = '<option value="">Seleccionar local...</option>';
+        localesData.forEach(local => {
+            if(local.activo) {
+                select.innerHTML += `<option value="${local.codigoLocal}">${local.nombre} - ${local.ubicacion?.ciudad || ''}</option>`;
+            }
+        });
+        return;
+    }
+
+    // Si no hay datos, hacer la petición
     try {
-        const response = await fetch('/api/locales');
+        const response = await fetch('/api/locales?activo=true&limite=500'); // Pedir solo activos
         const datos = await response.json();
         
         if (response.ok) {
-            const select = document.getElementById('localExistente');
             const locales = datos.locales || datos;
-            
             select.innerHTML = '<option value="">Seleccionar local...</option>';
             locales.forEach(local => {
                 select.innerHTML += `<option value="${local.codigoLocal}">${local.nombre} - ${local.ubicacion?.ciudad || ''}</option>`;

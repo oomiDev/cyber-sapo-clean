@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Maquina = require('../models/Maquina');
+const Region = require('../models/Region');
+const Local = require('../models/Local');
 const Pulso = require('../models/Pulso');
 const moment = require('moment');
 
@@ -12,13 +14,28 @@ const asyncHandler = fn => (req, res, next) => {
 // GET /api/analytics/data
 // Endpoint principal para obtener datos filtrados para el dashboard de tablas.
 router.get('/data', asyncHandler(async (req, res) => {
-    const { region, ciudad, codigoMaquina, fechaInicio, fechaFin } = req.query;
+    // Renombramos para claridad: ahora recibimos IDs
+    const { region: regionId, ciudad, maquina: maquinaId, fechaInicio, fechaFin } = req.query;
 
     // 1. Construir filtro de máquinas
-    const maquinaFilter = {};
-    if (region) maquinaFilter['ubicacion.region'] = region;
+    const maquinaFilter = { activa: true }; // Siempre traer solo máquinas activas
+
+    // Si se proporciona un ID de región, buscamos su nombre para usarlo en el filtro
+    if (regionId) {
+        const region = await Region.findById(regionId).lean();
+        if (region) {
+            // El modelo Maquina usa el nombre de la región, no el ID
+            maquinaFilter['ubicacion.region'] = region.nombre;
+        } else {
+            // Si el ID de región no es válido, no devolver ninguna máquina
+            return res.json({ dataTable: [] });
+        }
+    }
+
     if (ciudad) maquinaFilter['ubicacion.ciudad'] = ciudad;
-    if (codigoMaquina) maquinaFilter['codigoMaquina'] = codigoMaquina;
+    
+    // El filtro de máquina ahora usa el _id
+    if (maquinaId) maquinaFilter['_id'] = maquinaId;
 
     // 2. Obtener máquinas que coinciden con el filtro
     const maquinas = await Maquina.find(maquinaFilter).lean();
@@ -59,15 +76,22 @@ router.get('/data', asyncHandler(async (req, res) => {
 }));
 
 // GET /api/analytics/filters
-// Proporciona los valores únicos para los filtros del dashboard
+// Proporciona los valores para los filtros del dashboard desde las colecciones principales
 router.get('/filters', asyncHandler(async (req, res) => {
-    const [regiones, ciudades, codigosMaquina] = await Promise.all([
-        Maquina.distinct('ubicacion.region'),
-        Maquina.distinct('ubicacion.ciudad'),
-        Maquina.distinct('codigoMaquina'),
+    const [regiones, locales, maquinas] = await Promise.all([
+        Region.find({ activa: true }).select('nombre').sort({ nombre: 1 }).lean(),
+        Local.find({ activo: true }).select('ubicacion.ciudad').lean(),
+        Maquina.find({ activa: true }).select('codigoMaquina nombre').sort({ codigoMaquina: 1 }).lean(),
     ]);
 
-    res.json({ regiones, ciudades, codigosMaquina });
+    // Extraer ciudades únicas, no nulas y ordenarlas
+    const ciudades = [...new Set(locales.map(l => l.ubicacion.ciudad).filter(Boolean))].sort();
+
+    res.json({
+        regiones, // Devuelve [{_id, nombre}]
+        ciudades, // Devuelve ["Ciudad1", "Ciudad2"]
+        maquinas  // Devuelve [{_id, codigoMaquina, nombre}]
+    });
 }));
 
 module.exports = router;
