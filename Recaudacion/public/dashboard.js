@@ -3,7 +3,7 @@ let charts = {};
 let datosActuales = {};
 
 // Inicializar aplicación
-document.addEventListener('DOMContentLoaded', function() {
+function inicializarApp() {
     inicializarFechas();
     cargarDatos();
     actualizarReloj();
@@ -11,17 +11,27 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(cargarDatos, 30000); // Actualizar cada 30 segundos
 
     // Añadir event listener para el botón de aplicar filtros
-    document.getElementById('aplicarFiltros').addEventListener('click', aplicarFiltros);
+    const aplicarFiltrosBtn = document.getElementById('aplicarFiltros');
+    if (aplicarFiltrosBtn) {
+        aplicarFiltrosBtn.addEventListener('click', aplicarFiltros);
+    }
 
     // Añadir event listener para el botón de refrescar
-     const refreshButton = document.querySelector('.btn-refresh');
+    const refreshButton = document.querySelector('.btn-refresh');
     if (refreshButton) {
         refreshButton.addEventListener('click', (e) => {
             e.preventDefault();
             cargarDatos();
         });
     }
-});
+}
+
+// Esperar a que el DOM esté completamente cargado
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inicializarApp);
+} else {
+    inicializarApp();
+}
 
 // Configurar fechas por defecto
 function inicializarFechas() {
