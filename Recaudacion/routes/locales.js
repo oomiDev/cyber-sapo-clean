@@ -44,6 +44,7 @@ router.get('/', async (req, res) => {
         // Ejecutar consulta
         const locales = await Local.find(filtros)
             .populate('tipoEstablecimiento', 'nombre icono') // Poblar el tipo de establecimiento
+            .populate('ubicacion.region', 'nombre') // Poblar el nombre de la región
             .sort(ordenamiento)
             .limit(parseInt(limite))
             .skip(skip)
@@ -143,6 +144,16 @@ router.post('/', async (req, res) => {
             });
         }
 
+        // Buscar el ObjectId de la región a partir del código de región
+        const RegionModel = require('../models/Region');
+        const regionObj = await RegionModel.findOne({ codigoRegion: ubicacion.region });
+        if (!regionObj) {
+            return res.status(400).json({
+                error: 'Región no válida',
+                mensaje: `La región con código '${ubicacion.region}' no existe.`
+            });
+        }
+
         // Verificar que no exista un local con el mismo código
         const localExistente = await Local.findOne({ 
             codigoLocal: codigoLocal.toUpperCase() 
@@ -162,7 +173,7 @@ router.post('/', async (req, res) => {
             descripcion,
             tipoEstablecimiento,
             ubicacion: {
-                region: ubicacion.region,
+                region: regionObj._id,
                 ciudad: ubicacion.ciudad,
                 direccion: ubicacion.direccion,
                 codigoPostal: ubicacion.codigoPostal,
@@ -210,6 +221,19 @@ router.put('/:codigo', async (req, res) => {
     try {
         const { codigo } = req.params;
         const actualizaciones = req.body;
+
+        // Si se está actualizando la región, convertir el código de región a ObjectId
+        if (actualizaciones.ubicacion && actualizaciones.ubicacion.region) {
+            const RegionModel = require('../models/Region');
+            const regionObj = await RegionModel.findOne({ codigoRegion: actualizaciones.ubicacion.region });
+            if (!regionObj) {
+                return res.status(400).json({
+                    error: 'Región no válida',
+                    mensaje: `La región con código '${actualizaciones.ubicacion.region}' no existe.`
+                });
+            }
+            actualizaciones.ubicacion.region = regionObj._id;
+        }
 
         // No permitir actualizar el código del local
         delete actualizaciones.codigoLocal;

@@ -600,7 +600,7 @@ function actualizarTablaLocales(locales) {
             <td><strong>${local.codigoLocal}</strong></td>
             <td>${local.nombre}</td>
             <td>${local.tipoEstablecimiento?.nombre || 'N/A'}</td>
-            <td>${local.ubicacion?.region || 'N/A'}</td>
+            <td>${local.ubicacion?.region?.nombre || local.ubicacion?.region || 'N/A'}</td>
             <td>
                 <span class="badge bg-info">${local.estadisticas?.totalMaquinas || 0}</span>
                 <small class="text-muted">(${local.estadisticas?.maquinasActivas || 0} activas)</small>
