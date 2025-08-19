@@ -37,7 +37,11 @@ app.use(
         },
     })
 ); // Seguridad HTTP headers
-app.use(cors()); // Permitir peticiones cross-origin
+const corsOptions = {
+    origin: ['http://localhost:3000', 'https://cyber-sapo-clean.onrender.com'],
+    optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions)); // Permitir peticiones cross-origin
 app.use(express.json({ limit: '10mb' })); // Parser JSON
 app.use(express.urlencoded({ extended: true })); // Parser URL encoded
 
