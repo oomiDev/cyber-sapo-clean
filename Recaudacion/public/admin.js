@@ -594,7 +594,7 @@ async function cargarLocales() {
     try {
         const region = document.getElementById('filtro-region-local')?.value || '';
         const tipo = document.getElementById('filtro-tipo-local')?.value || '';
-        const busqueda = document.getElementById('busqueda-local')?.value || '';
+        const busqueda = document.getElementById('buscarLocal').value || '';
 
         const url = new URL('/api/locales', window.location.origin);
         if (region) url.searchParams.append('region', region);
@@ -717,7 +717,11 @@ async function guardarLocal(event) {
             cargarLocales();
             cargarLocalesParaSelect();
         } else {
-            mostrarError(`Error al ${esEdicion ? 'actualizar' : 'guardar'} local: ` + (resultado.error || resultado.message));
+            if (response.status === 409) {
+                mostrarError(`Error: ${resultado.error}. El código de local ya existe.`);
+            } else {
+                mostrarError(`Error al ${esEdicion ? 'actualizar' : 'guardar'} local: ` + (resultado.error || resultado.message));
+            }
         }
     } catch (error) {
         console.error('Error:', error);
