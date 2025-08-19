@@ -71,9 +71,7 @@ app.use((req, res, next) => {
 // Conexión a MongoDB
 const connectDB = async () => {
     try {
-        const mongoURI = process.env.NODE_ENV === 'production' 
-            ? process.env.MONGODB_URI_PROD 
-            : process.env.MONGODB_URI || 'mongodb://localhost:27017/recaudacion_db';
+        const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/recaudacion_db';
 
         await mongoose.connect(mongoURI);
         
