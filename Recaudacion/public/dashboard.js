@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const API_BASE_URL = '/api/analytics';
 
     // Elementos del DOM
+    const mainLoader = document.getElementById('loading-overlay');
+    const tableLoader = document.getElementById('loader-container');
     const regionFilter = document.getElementById('region-filter');
     const ciudadFilter = document.getElementById('ciudad-filter');
     const maquinaFilter = document.getElementById('maquina-filter');
@@ -9,14 +11,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const endDate = document.getElementById('end-date');
     const applyFiltersBtn = document.getElementById('apply-filters');
     const tableBody = document.getElementById('data-table-body');
-    const loaderContainer = document.getElementById('loader-container');
     const totalIngresosEl = document.getElementById('total-ingresos');
     const totalPulsosEl = document.getElementById('total-pulsos');
     const totalMaquinasEl = document.getElementById('total-maquinas');
 
-    // Función para poblar los selectores de filtro
     const populateSelect = (element, options) => {
-        element.innerHTML = '<option value="">Todas</option>'; // Reset
+        element.innerHTML = '<option value="">Todas</option>';
         if (options) {
             options.forEach(option => {
                 const opt = document.createElement('option');
@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Cargar los filtros desde la API
     const loadFilters = async () => {
         try {
             const response = await fetch(`${API_BASE_URL}/filters`);
@@ -41,9 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Cargar y renderizar los datos de la tabla
     const loadTableData = async () => {
-        if (loaderContainer) loaderContainer.style.display = 'flex';
+        if (tableLoader) tableLoader.style.display = 'block';
         if (tableBody) tableBody.innerHTML = '';
 
         const params = new URLSearchParams();
@@ -63,41 +61,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (totalIngresosEl) totalIngresosEl.textContent = '0.00 €';
                 if (totalPulsosEl) totalPulsosEl.textContent = '0';
                 if (totalMaquinasEl) totalMaquinasEl.textContent = '0';
-                return;
+            } else {
+                if (tableBody) {
+                    dataTable.forEach(row => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${row.codigoMaquina || 'N/A'}</td>
+                            <td>${row.nombre || 'N/A'}</td>
+                            <td>${row.ubicacion?.region || 'N/A'}</td>
+                            <td>${row.ubicacion?.ciudad || 'N/A'}</td>
+                            <td><span class="badge bg-${row.estado?.operativo === 'Activa' ? 'success' : 'danger'} p-2">${row.estado?.operativo || 'Inactivo'}</span></td>
+                            <td>${(row.ingresos || 0).toFixed(2)} €</td>
+                            <td>${row.pulsos || 0}</td>
+                        `;
+                        tableBody.appendChild(tr);
+                    });
+                }
+                const totalIngresos = dataTable.reduce((sum, row) => sum + (row.ingresos || 0), 0);
+                const totalPulsos = dataTable.reduce((sum, row) => sum + (row.pulsos || 0), 0);
+                if (totalIngresosEl) totalIngresosEl.textContent = `${totalIngresos.toFixed(2)} €`;
+                if (totalPulsosEl) totalPulsosEl.textContent = totalPulsos;
+                if (totalMaquinasEl) totalMaquinasEl.textContent = dataTable.length;
             }
-
-            if (tableBody) {
-                dataTable.forEach(row => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${row.codigoMaquina || 'N/A'}</td>
-                        <td>${row.nombre || 'N/A'}</td>
-                        <td>${row.ubicacion?.region || 'N/A'}</td>
-                        <td>${row.ubicacion?.ciudad || 'N/A'}</td>
-                        <td><span class="badge bg-${row.estado?.operativo === 'Activa' ? 'success' : 'danger'} p-2">${row.estado?.operativo || 'Inactivo'}</span></td>
-                        <td>${(row.ingresos || 0).toFixed(2)} €</td>
-                        <td>${row.pulsos || 0}</td>
-                    `;
-                    tableBody.appendChild(tr);
-                });
-            }
-
-            // Actualizar resumen
-            const totalIngresos = dataTable.reduce((sum, row) => sum + (row.ingresos || 0), 0);
-            const totalPulsos = dataTable.reduce((sum, row) => sum + (row.pulsos || 0), 0);
-            if (totalIngresosEl) totalIngresosEl.textContent = `${totalIngresos.toFixed(2)} €`;
-            if (totalPulsosEl) totalPulsosEl.textContent = totalPulsos;
-            if (totalMaquinasEl) totalMaquinasEl.textContent = dataTable.length;
-
         } catch (error) {
             console.error('Error al cargar la tabla:', error);
             if (tableBody) tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error al cargar los datos: ${error.message}</td></tr>`;
         } finally {
-            if (loaderContainer) loaderContainer.style.display = 'none';
+            if (tableLoader) tableLoader.style.display = 'none';
         }
     };
 
-    // Inicialización
     const init = async () => {
         const today = new Date();
         const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -105,7 +98,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (endDate) endDate.value = today.toISOString().split('T')[0];
 
         await loadFilters();
-        loadTableData();
+        await loadTableData();
+
+        if (mainLoader) mainLoader.style.display = 'none';
 
         if (applyFiltersBtn) applyFiltersBtn.addEventListener('click', loadTableData);
     };

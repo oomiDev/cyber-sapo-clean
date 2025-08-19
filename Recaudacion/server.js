@@ -71,7 +71,9 @@ app.use((req, res, next) => {
 // Conexión a MongoDB
 const connectDB = async () => {
     try {
-        const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/recaudacion_db';
+        const mongoURI = process.env.NODE_ENV === 'production' 
+            ? process.env.MONGODB_URI_PROD 
+            : process.env.MONGODB_URI || 'mongodb://localhost:27017/recaudacion_db';
 
         await mongoose.connect(mongoURI);
         
@@ -83,13 +85,9 @@ const connectDB = async () => {
 };
 
 // Ruta de prueba básica
+// Ruta principal que sirve el dashboard
 app.get('/', (req, res) => {
-    res.json({
-        mensaje: 'Sistema de Recaudación de Máquinas Expendedoras',
-        version: '1.0.0',
-        estado: 'Funcionando correctamente',
-        timestamp: new Date().toISOString()
-    });
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
 // Ruta de estado de la base de datos
