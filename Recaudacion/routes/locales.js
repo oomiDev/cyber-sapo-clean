@@ -43,8 +43,8 @@ router.get('/', async (req, res) => {
 
         // Ejecutar consulta
         const locales = await Local.find(filtros)
-            .populate('tipoEstablecimiento', 'nombre icono') // Poblar el tipo de establecimiento
-            .populate('ubicacion.region', 'nombre') // Poblar el nombre de la región
+            .populate('tipoEstablecimiento')
+            .populate('ubicacion.region')
             .sort(ordenamiento)
             .limit(parseInt(limite))
             .skip(skip)

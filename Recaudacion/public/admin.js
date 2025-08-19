@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
     safeAddEventListener('busqueda-local', 'input', cargarLocales);
     safeAddEventListener('filtro-region-local', 'change', cargarLocales);
     safeAddEventListener('filtro-tipo-local', 'change', cargarLocales);
+    safeAddEventListener('cancelar-edicion-local', 'click', cancelarEdicionLocal);
 
     // Gestión de Máquinas
     safeAddEventListener('formMaquina', 'submit', guardarMaquina);
@@ -608,44 +609,58 @@ async function cargarLocales() {
 // Actualizar tabla de locales
 function actualizarTablaLocales(locales) {
     const tbody = document.getElementById('tablaLocales');
-    
+    if (!tbody) {
+        console.error('Elemento #tablaLocales no encontrado.');
+        return;
+    }
+
     if (!locales || locales.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay locales registrados</td></tr>';
         return;
     }
 
-    tbody.innerHTML = locales.map(local => `
-        <tr>
-            <td><strong>${local.codigoLocal}</strong></td>
-            <td>${local.nombre}</td>
-            <td>${local.tipoEstablecimiento?.nombre || 'N/A'}</td>
-            <td>${local.ubicacion?.region?.nombre || local.ubicacion?.region || 'N/A'}</td>
-            <td>
-                <span class="badge bg-info">${local.estadisticas?.totalMaquinas || 0}</span>
-                <small class="text-muted">(${local.estadisticas?.maquinasActivas || 0} activas)</small>
-            </td>
-            <td>€${(local.estadisticas?.totalIngresos || 0).toFixed(2)}</td>
-            <td>
-                <button class="btn btn-sm btn-outline-primary btn-action" onclick="editarLocal('${local.codigoLocal}')">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-info btn-action" onclick="verDetallesLocal('${local.codigoLocal}')">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-danger btn-action" onclick="eliminarLocal('${local.codigoLocal}')">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
-        </tr>
-    `).join('');
+    const filasHtml = locales.map(local => {
+        const tipoEstablecimientoNombre = local.tipoEstablecimiento?.nombre || 'No especificado';
+        const regionNombre = local.ubicacion?.region?.nombre || 'No especificada';
+        const totalMaquinas = local.estadisticas?.totalMaquinas || 0;
+        const maquinasActivas = local.estadisticas?.maquinasActivas || 0;
+        const totalIngresos = (local.estadisticas?.totalIngresos || 0).toFixed(2);
+
+        return `
+            <tr>
+                <td><strong>${local.codigoLocal}</strong></td>
+                <td>${local.nombre}</td>
+                <td>${tipoEstablecimientoNombre}</td>
+                <td>${regionNombre}</td>
+                <td>
+                    <span class="badge bg-info">${totalMaquinas}</span>
+                    <small class="text-muted">(${maquinasActivas} activas)</small>
+                </td>
+                <td>€${totalIngresos}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary btn-action" onclick="editarLocal('${local.codigoLocal}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-info btn-action" onclick="verDetallesLocal('${local.codigoLocal}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger btn-action" onclick="eliminarLocal('${local.codigoLocal}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    tbody.innerHTML = filasHtml;
 }
 
-// Guardar nuevo local
 async function guardarLocal(event) {
-    event.preventDefault(); // Prevenir el refresco de la página
+    event.preventDefault();
+    const localId = document.getElementById('local-id').value;
+    const esEdicion = !!localId;
 
     const datosLocal = {
-        codigoLocal: document.getElementById('codigoLocal').value,
         nombre: document.getElementById('nombreLocal').value,
         tipoEstablecimiento: document.getElementById('tipoEstablecimiento').value,
         ubicacion: {
@@ -667,9 +682,16 @@ async function guardarLocal(event) {
         notas: document.getElementById('notasLocal').value
     };
 
+    if (!esEdicion) {
+        datosLocal.codigoLocal = document.getElementById('codigoLocal').value;
+    }
+
+    const url = esEdicion ? `/api/locales/${localId}` : '/api/locales';
+    const method = esEdicion ? 'PUT' : 'POST';
+
     try {
-        const response = await fetch('/api/locales', {
-            method: 'POST',
+        const response = await fetch(url, {
+            method: method,
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -679,16 +701,16 @@ async function guardarLocal(event) {
         const resultado = await response.json();
 
         if (response.ok) {
-            mostrarExito('Local guardado exitosamente');
-            document.getElementById('form-local').reset(); // Corregido el ID del formulario
-            cargarLocales(); // Recargar la lista de locales
+            mostrarExito(`Local ${esEdicion ? 'actualizado' : 'guardado'} exitosamente`);
+            cancelarEdicionLocal();
+            cargarLocales();
             cargarLocalesParaSelect();
         } else {
-            mostrarError('Error al guardar local: ' + resultado.error);
+            mostrarError(`Error al ${esEdicion ? 'actualizar' : 'guardar'} local: ` + (resultado.error || resultado.message));
         }
     } catch (error) {
         console.error('Error:', error);
-        mostrarError('Error de conexión al guardar local');
+        mostrarError(`Error de conexión al ${esEdicion ? 'actualizar' : 'guardar'} local`);
     }
 }
 
@@ -876,8 +898,41 @@ function buscarMaquinas() {
 // ==================== FUNCIONES DE ACCIÓN ====================
 
 // Editar local
-function editarLocal(codigo) {
-    alert('Función de edición en desarrollo para local: ' + codigo);
+function editarLocal(codigoLocal) {
+    const local = localesData.find(l => l.codigoLocal === codigoLocal);
+    if (!local) {
+        mostrarError('No se encontró el local para editar.');
+        return;
+    }
+
+    document.getElementById('local-id').value = local._id;
+    document.getElementById('codigoLocal').value = local.codigoLocal;
+    document.getElementById('codigoLocal').disabled = true;
+    document.getElementById('nombreLocal').value = local.nombre;
+    document.getElementById('tipoEstablecimiento').value = local.tipoEstablecimiento?._id || '';
+    document.getElementById('regionLocal').value = local.ubicacion.region?._id || '';
+    document.getElementById('ciudadLocal').value = local.ubicacion.ciudad;
+    document.getElementById('direccionLocal').value = local.ubicacion.direccion;
+    document.getElementById('codigo-postal').value = local.ubicacion.codigoPostal || '';
+    document.getElementById('piso-zona-local').value = local.ubicacion.piso || '';
+    document.getElementById('responsableLocal').value = local.contacto?.nombreResponsable || '';
+    document.getElementById('telefonoLocal').value = local.contacto?.telefono || '';
+    document.getElementById('emailLocal').value = local.contacto?.email || '';
+    document.getElementById('flujoPersonas').value = local.caracteristicas?.flujoPersonas || 'Medio';
+    document.getElementById('nivelSeguridad').value = local.caracteristicas?.nivelSeguridad || 'Medio';
+    document.getElementById('notasLocal').value = local.notas || '';
+
+    document.querySelector('#locales-panel h5').textContent = 'Editar Local';
+    document.getElementById('cancelar-edicion-local').style.display = 'block';
+    document.getElementById('form-local').scrollIntoView({ behavior: 'smooth' });
+}
+
+function cancelarEdicionLocal() {
+    document.getElementById('form-local').reset();
+    document.getElementById('local-id').value = '';
+    document.getElementById('codigoLocal').disabled = false;
+    document.querySelector('#locales-panel h5').textContent = 'Agregar Nuevo Local';
+    document.getElementById('cancelar-edicion-local').style.display = 'none';
 }
 
 // Ver detalles de local
@@ -886,13 +941,13 @@ function verDetallesLocal(codigo) {
 }
 
 // Eliminar local
-async function eliminarLocal(codigo) {
+async function eliminarLocal(codigoLocal) {
     if (!confirm('¿Está seguro de eliminar este local? Esta acción no se puede deshacer.')) {
         return;
     }
 
     try {
-        const response = await fetch(`/api/locales/${codigo}`, {
+        const response = await fetch(`/api/locales/${codigoLocal}`, {
             method: 'DELETE'
         });
 
