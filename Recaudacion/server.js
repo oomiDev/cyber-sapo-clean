@@ -39,7 +39,7 @@ app.use(
     })
 ); // Seguridad HTTP headers
 const corsOptions = {
-    origin: ['http://localhost:3000', 'https://cyber-sapo-clean.onrender.com', 'https://cyber-sapo-clean.onrender.com/simulador-maquina.html'],
+    origin: ['http://localhost:3000', 'https://cyber-sapo-clean.onrender.com'],
     optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions)); // Permitir peticiones cross-origin
@@ -47,8 +47,8 @@ app.use(express.json({ limit: '10mb' })); // Parser JSON
 app.use(express.urlencoded({ extended: true })); // Parser URL encoded
 
 // Servir archivos estáticos (dashboard y simulador)
-app.use(express.static('public'));
-app.use(express.static('../Formacion/EJERCICIO-PRACTICO'));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, '../Formacion/EJERCICIO-PRACTICO')));
 
 // Middleware para logs básicos
 app.use((req, res, next) => {
