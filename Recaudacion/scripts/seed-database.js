@@ -8,6 +8,7 @@
 require('dotenv').config({ path: '../.env' });
 const mongoose = require('mongoose');
 const Maquina = require('../models/Maquina');
+const Pulso = require('../models/Pulso');
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -62,6 +63,33 @@ const seedDatabase = async () => {
             });
             await maquina.save();
             console.log(`✅ Nueva máquina de prueba ${codigoMaquinaPrueba} creada y activada.`);
+        }
+
+        console.log('🌱 Verificando y creando pulsos de prueba...');
+        const pulsosExistentes = await Pulso.countDocuments({ codigoMaquina: codigoMaquinaPrueba });
+
+        if (pulsosExistentes === 0) {
+            console.log('⚠️ No se encontraron pulsos. Creando datos de ejemplo...');
+            const pulsos = [];
+            const hoy = new Date();
+            for (let i = 0; i < 100; i++) {
+                const fechaAleatoria = new Date(hoy.getTime() - Math.random() * 30 * 24 * 60 * 60 * 1000);
+                const horaAleatoria = Math.floor(Math.random() * 24);
+                fechaAleatoria.setHours(horaAleatoria);
+
+                pulsos.push({
+                    maquina: maquina._id,
+                    codigoMaquina: codigoMaquinaPrueba,
+                    valorPulso: 0.50,
+                    moneda: 'EUR',
+                    fechaHora: fechaAleatoria,
+                    ubicacion: maquina.ubicacion
+                });
+            }
+            await Pulso.insertMany(pulsos);
+            console.log(`✅ Creados ${pulsos.length} pulsos de prueba para la máquina ${codigoMaquinaPrueba}.`);
+        } else {
+            console.log('✔️ Pulsos de prueba ya existen. No se crearán nuevos.');
         }
 
     } catch (error) {
