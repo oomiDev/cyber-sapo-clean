@@ -575,14 +575,19 @@ async function cargarTiposEstablecimientoParaSelects() {
 // Cargar lista de locales
 async function cargarLocales() {
     try {
-        const region = document.getElementById('filtro-region-local').value;
-        const tipo = document.getElementById('filtro-tipo-local').value;
-        const busqueda = document.getElementById('busqueda-local').value;
-        
-        let url = '/api/locales?';
-        if (region) url += `region=${region}&`;
-        if (tipo) url += `tipo=${tipo}&`;
-        if (busqueda) url += `busqueda=${busqueda}&`;
+        // Obtener valores de los filtros de forma segura
+        const regionInput = document.getElementById('filtro-region-local');
+        const tipoInput = document.getElementById('filtro-tipo-local');
+        const busquedaInput = document.getElementById('busqueda-local');
+
+        const region = regionInput ? regionInput.value : '';
+        const tipo = tipoInput ? tipoInput.value : '';
+        const busqueda = busquedaInput ? busquedaInput.value : '';
+
+        let url = new URL('/api/locales', window.location.origin);
+        if (region) url.searchParams.append('region', region);
+        if (tipo) url.searchParams.append('tipo', tipo);
+        if (busqueda) url.searchParams.append('busqueda', busqueda);
 
         const response = await fetch(url);
         const datos = await response.json();
