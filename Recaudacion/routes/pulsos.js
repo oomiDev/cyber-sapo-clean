@@ -34,6 +34,11 @@ router.post('/recibir', async (req, res) => {
     try {
         // PASO 1: Validar datos recibidos
         const { codigoMaquina, valor, numeroSecuencia } = req.body; // 'valor' viene del simulador
+
+        // --- LOG DE DIAGNÓSTICO ---
+        console.log('--- INICIO PETICIÓN /api/pulsos/recibir ---');
+        console.log('Datos recibidos (req.body):', JSON.stringify(req.body));
+        // --- FIN LOG ---
         
         // Validaciones básicas
         if (!codigoMaquina) {
@@ -48,6 +53,10 @@ router.post('/recibir', async (req, res) => {
             codigoMaquina: codigoMaquina.toUpperCase(),
             activa: true 
         });
+
+        // --- LOG DE DIAGNÓSTICO ---
+        console.log('Resultado de la búsqueda de máquina:', maquina ? `Encontrada: ${maquina._id}` : 'No encontrada o inactiva');
+        // --- FIN LOG ---
 
         if (!maquina) {
             return res.status(404).json({
