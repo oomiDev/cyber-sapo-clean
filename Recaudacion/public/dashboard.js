@@ -96,6 +96,7 @@ function actualizarMetricas(metricas) {
     document.getElementById('pulsosHoy').textContent = metricas.pulsos.toLocaleString();
     document.getElementById('ingresosHoy').textContent = '€' + (metricas.ingresos || 0).toFixed(2);
     document.getElementById('maquinasActivas').textContent = metricas.maquinasActivas;
+    document.getElementById('totalMaquinas').textContent = `de ${metricas.totalMaquinas} total`;
 
     actualizarCrecimiento(document.getElementById('crecimientoPulsos'), metricas.crecimientoPulsos);
     actualizarCrecimiento(document.getElementById('crecimientoIngresos'), metricas.crecimientoIngresos);

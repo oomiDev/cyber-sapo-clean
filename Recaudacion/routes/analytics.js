@@ -129,8 +129,7 @@ router.get('/dashboard', async (req, res) => {
                 pulsos: metricas.totalPulsos,
                 ingresos: metricas.totalIngresos,
                 maquinasActivas: metricas.maquinasActivas.length,
-                crecimientoPulsos: null, // Placeholder, la lógica de crecimiento se puede añadir aquí
-                crecimientoIngresos: null // Placeholder
+                totalMaquinas: maquinas.length
             },
             graficas: {
                 tendencia: tendencia,
