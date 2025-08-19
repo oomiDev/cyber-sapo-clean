@@ -662,7 +662,7 @@ async function guardarLocal(event) {
 
         if (response.ok) {
             mostrarExito('Local guardado exitosamente');
-            document.getElementById('formLocal').reset();
+            document.getElementById('form-local').reset(); // Corregido el ID del formulario
             cargarLocales(); // Recargar la lista de locales
             cargarLocalesParaSelect();
         } else {
