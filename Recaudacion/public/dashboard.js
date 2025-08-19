@@ -1,122 +1,113 @@
 document.addEventListener('DOMContentLoaded', () => {
-    let charts = {};
+    const API_BASE_URL = '/api/analytics';
 
-    const inicializarApp = () => {
-        inicializarFechas();
-        cargarFiltros();
-        cargarDatos();
-        setInterval(cargarDatos, 30000); // Auto-refresh
+    // Elementos del DOM
+    const regionFilter = document.getElementById('region-filter');
+    const ciudadFilter = document.getElementById('ciudad-filter');
+    const maquinaFilter = document.getElementById('maquina-filter');
+    const startDate = document.getElementById('start-date');
+    const endDate = document.getElementById('end-date');
+    const applyFiltersBtn = document.getElementById('apply-filters');
+    const tableBody = document.getElementById('data-table-body');
+    const loader = document.getElementById('loader');
+    const totalIngresosEl = document.getElementById('total-ingresos');
+    const totalPulsosEl = document.getElementById('total-pulsos');
+    const totalMaquinasEl = document.getElementById('total-maquinas');
 
-        document.getElementById('aplicarFiltros').addEventListener('click', cargarDatos);
-        document.querySelector('.btn-refresh').addEventListener('click', cargarDatos);
-    };
-
-    const inicializarFechas = () => {
-        const hoy = new Date();
-        const hace7Dias = new Date(hoy.getTime() - 7 * 24 * 60 * 60 * 1000);
-        document.getElementById('fechaFin').value = hoy.toISOString().split('T')[0];
-        document.getElementById('fechaInicio').value = hace7Dias.toISOString().split('T')[0];
-    };
-
-    const cargarFiltros = async () => {
-        try {
-            const response = await fetch('/api/locales/regiones');
-            if (!response.ok) return;
-            const regiones = await response.json();
-            const regionFilter = document.getElementById('regionFilter');
-            regionFilter.innerHTML = '<option value="">Todas las regiones</option>';
-            regiones.forEach(region => {
-                regionFilter.innerHTML += `<option value="${region}">${region}</option>`;
+    // Función para poblar los selectores de filtro
+    const populateSelect = (element, options) => {
+        element.innerHTML = '<option value="">Todas</option>'; // Reset
+        if (options) {
+            options.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option;
+                opt.textContent = option;
+                element.appendChild(opt);
             });
-        } catch (error) {
-            console.error('Error cargando filtros de región:', error);
         }
     };
 
-    const cargarDatos = async () => {
-        const loadingOverlay = document.getElementById('loading-overlay');
-        loadingOverlay.style.opacity = '1';
-        loadingOverlay.style.visibility = 'visible';
-
+    // Cargar los filtros desde la API
+    const loadFilters = async () => {
         try {
-            const params = new URLSearchParams({
-                fechaInicio: document.getElementById('fechaInicio').value,
-                fechaFin: document.getElementById('fechaFin').value,
-                region: document.getElementById('regionFilter').value
-            });
-            const response = await fetch(`/api/analytics/dashboard?${params}`);
+            const response = await fetch(`${API_BASE_URL}/filters`);
+            if (!response.ok) throw new Error('Error al cargar filtros');
             const data = await response.json();
-
-            if (!response.ok) throw new Error(data.error || 'Error del servidor');
-
-            actualizarMetricas(data.metricas);
-            actualizarGraficas(data.graficas, data.maquinas, data.topMaquinas);
-
+            populateSelect(regionFilter, data.regiones);
+            populateSelect(ciudadFilter, data.ciudades);
+            populateSelect(maquinaFilter, data.codigosMaquina);
         } catch (error) {
-            console.error('Error al cargar datos del dashboard:', error);
-            alert('No se pudieron cargar los datos. Intente de nuevo.');
-        } finally {
-            loadingOverlay.style.opacity = '0';
-            loadingOverlay.style.visibility = 'hidden';
+            console.error('Error al inicializar filtros:', error);
+            // Puedes mostrar un mensaje al usuario aquí si lo deseas
         }
     };
 
-    const actualizarMetricas = (metricas) => {
-        document.getElementById('totalIngresos').textContent = `€${(metricas.ingresos || 0).toFixed(2)}`;
-        document.getElementById('totalPulsos').textContent = (metricas.pulsos || 0).toLocaleString();
-        document.getElementById('totalMaquinas').textContent = `${metricas.maquinasActivas || 0} / ${metricas.totalMaquinas || 0}`;
-        document.getElementById('ingresoPromedio').textContent = `€${(metricas.ingresoPromedio || 0).toFixed(2)}`;
+    // Cargar y renderizar los datos de la tabla
+    const loadTableData = async () => {
+        loader.style.display = 'block';
+        tableBody.innerHTML = '';
+
+        const params = new URLSearchParams();
+        if (regionFilter.value) params.append('region', regionFilter.value);
+        if (ciudadFilter.value) params.append('ciudad', ciudadFilter.value);
+        if (maquinaFilter.value) params.append('codigoMaquina', maquinaFilter.value);
+        if (startDate.value) params.append('fechaInicio', startDate.value);
+        if (endDate.value) params.append('fechaFin', endDate.value);
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/data?${params.toString()}`);
+            if (!response.ok) throw new Error(`Error al cargar datos: ${response.statusText}`);
+            const { dataTable } = await response.json();
+
+            if (!dataTable || dataTable.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="7" class="text-center">No se encontraron resultados.</td></tr>';
+                totalIngresosEl.textContent = '0.00 €';
+                totalPulsosEl.textContent = '0';
+                totalMaquinasEl.textContent = '0';
+                return;
+            }
+
+            dataTable.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.codigoMaquina || 'N/A'}</td>
+                    <td>${row.nombre || 'N/A'}</td>
+                    <td>${row.ubicacion?.region || 'N/A'}</td>
+                    <td>${row.ubicacion?.ciudad || 'N/A'}</td>
+                    <td><span class="badge bg-${row.estado?.operativo === 'Activa' ? 'success' : 'danger'} p-2">${row.estado?.operativo || 'Inactivo'}</span></td>
+                    <td>${(row.ingresos || 0).toFixed(2)} €</td>
+                    <td>${row.pulsos || 0}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+
+            // Actualizar resumen
+            const totalIngresos = dataTable.reduce((sum, row) => sum + (row.ingresos || 0), 0);
+            const totalPulsos = dataTable.reduce((sum, row) => sum + (row.pulsos || 0), 0);
+            totalIngresosEl.textContent = `${totalIngresos.toFixed(2)} €`;
+            totalPulsosEl.textContent = totalPulsos;
+            totalMaquinasEl.textContent = dataTable.length;
+
+        } catch (error) {
+            console.error('Error al cargar la tabla:', error);
+            tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error al cargar los datos: ${error.message}</td></tr>`;
+        } finally {
+            loader.style.display = 'none';
+        }
     };
 
-    const actualizarGraficas = (graficas, maquinas, topMaquinas) => {
-        renderizarGrafico(charts, 'tendenciaIngresosChart', 'line', {
-            labels: graficas.tendencia.map(d => moment(d.fecha).format('DD/MM')),
-            datasets: [{
-                label: 'Ingresos (€)',
-                data: graficas.tendencia.map(d => d.ingresos),
-                borderColor: '#0d6efd', tension: 0.3
-            }]
-        });
+    // Inicialización
+    const init = () => {
+        const today = new Date();
+        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        startDate.value = firstDayOfMonth.toISOString().split('T')[0];
+        endDate.value = today.toISOString().split('T')[0];
 
-        renderizarGrafico(charts, 'distribucionHorariaChart', 'bar', {
-            labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
-            datasets: [{
-                label: 'Pulsos por Hora',
-                data: Array.from({ length: 24 }, (_, i) => graficas.distribucionHoraria.find(d => d.hora === i)?.pulsos || 0),
-                backgroundColor: 'rgba(13, 110, 253, 0.5)'
-            }]
-        });
+        loadFilters();
+        loadTableData();
 
-        renderizarGrafico(charts, 'ingresosPorRegionChart', 'doughnut', {
-            labels: graficas.ingresosPorRegion.map(r => r.region),
-            datasets: [{
-                data: graficas.ingresosPorRegion.map(r => r.ingresos),
-                backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6c757d']
-            }]
-        });
-
-        renderizarGrafico(charts, 'estadoMaquinasChart', 'pie', {
-            labels: maquinas.distribucion.map(e => e.estado),
-            datasets: [{
-                data: maquinas.distribucion.map(e => e.cantidad),
-                backgroundColor: maquinas.distribucion.map(e => ({ 'Activa': '#198754', 'Inactiva': '#6c757d', 'Mantenimiento': '#ffc107', 'Averiada': '#dc3545' }[e.estado]))
-            }]
-        });
-
-        actualizarTabla('topMaquinasIngresos', topMaquinas.porIngresos, row => `<td>${row.codigo}</td><td>€${(row.totalIngresos || 0).toFixed(2)}</td>`);
-        actualizarTabla('topMaquinasPulsos', topMaquinas.porPulsos, row => `<td>${row.codigo}</td><td>${(row.totalPulsos || 0).toLocaleString()}</td>`);
+        applyFiltersBtn.addEventListener('click', loadTableData);
     };
 
-    const renderizarGrafico = (chartInstance, canvasId, type, data) => {
-        const ctx = document.getElementById(canvasId).getContext('2d');
-        if (chartInstance[canvasId]) chartInstance[canvasId].destroy();
-        chartInstance[canvasId] = new Chart(ctx, { type, data, options: { responsive: true, maintainAspectRatio: false } });
-    };
-
-    const actualizarTabla = (tbodyId, data, rowTemplate) => {
-        const tbody = document.getElementById(tbodyId);
-        tbody.innerHTML = data.length > 0 ? data.map(item => `<tr>${rowTemplate(item)}</tr>`).join('') : `<tr><td colspan="2" class="text-center">No hay datos</td></tr>`;
-    };
-
-    inicializarApp();
+    init();
 });

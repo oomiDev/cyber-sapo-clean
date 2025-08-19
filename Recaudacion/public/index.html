@@ -23,63 +23,92 @@
         </div>
     </nav>
 
-    <div class="container-fluid p-4">
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <label for="fechaInicio" class="form-label">Fecha Inicio</label>
-                <input type="date" id="fechaInicio" class="form-control">
-            </div>
-            <div class="col-md-3">
-                <label for="fechaFin" class="form-label">Fecha Fin</label>
-                <input type="date" id="fechaFin" class="form-control">
-            </div>
-            <div class="col-md-3">
-                <label for="regionFilter" class="form-label">Región</label>
-                <select id="regionFilter" class="form-select"></select>
-            </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <button id="aplicarFiltros" class="btn btn-primary w-100">Aplicar Filtros</button>
+    <div class="container-fluid mt-4">
+        <!-- Panel de Filtros -->
+        <div class="filter-panel mb-4">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-2">
+                    <label for="region-filter" class="form-label">Región</label>
+                    <select id="region-filter" class="form-select"><option value="">Todas</option></select>
+                </div>
+                <div class="col-md-2">
+                    <label for="ciudad-filter" class="form-label">Ciudad</label>
+                    <select id="ciudad-filter" class="form-select"><option value="">Todas</option></select>
+                </div>
+                <div class="col-md-2">
+                    <label for="maquina-filter" class="form-label">Máquina</label>
+                    <select id="maquina-filter" class="form-select"><option value="">Todas</option></select>
+                </div>
+                <div class="col-md-2">
+                    <label for="start-date" class="form-label">Fecha Inicio</label>
+                    <input type="date" id="start-date" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <label for="end-date" class="form-label">Fecha Fin</label>
+                    <input type="date" id="end-date" class="form-control">
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button id="apply-filters" class="btn btn-primary"><i class="bi bi-search"></i> Aplicar Filtros</button>
+                </div>
             </div>
         </div>
 
-        <div class="row gy-4">
-            <!-- Métricas Principales -->
-            <div class="col-lg-3 col-md-6">
-                <div class="stat-card bg-primary text-white"><h5 class="card-title">Ingresos Totales</h5><p id="totalIngresos" class="card-text"></p></div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="stat-card bg-info text-white"><h5 class="card-title">Pulsos Registrados</h5><p id="totalPulsos" class="card-text"></p></div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="stat-card bg-success text-white"><h5 class="card-title">Máquinas Activas</h5><p id="totalMaquinas" class="card-text"></p></div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="stat-card bg-secondary text-white"><h5 class="card-title">Ingreso Promedio</h5><p id="ingresoPromedio" class="card-text"></p></div>
-            </div>
-
-            <!-- Gráficos -->
-            <div class="col-lg-6"><div class="chart-card"><canvas id="tendenciaIngresosChart"></canvas></div></div>
-            <div class="col-lg-6"><div class="chart-card"><canvas id="distribucionHorariaChart"></canvas></div></div>
-            <div class="col-lg-6"><div class="chart-card"><canvas id="ingresosPorRegionChart"></canvas></div></div>
-            <div class="col-lg-6"><div class="chart-card"><canvas id="estadoMaquinasChart"></canvas></div></div>
-
-            <!-- Tablas -->
-            <div class="col-lg-6">
-                <div class="table-card">
-                    <h5>Top 5 Máquinas por Ingresos</h5>
-                    <table class="table table-striped"><thead><tr><th>Código</th><th>Ingresos</th></tr></thead><tbody id="topMaquinasIngresos"></tbody></table>
+        <!-- Resumen General -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-cash-coin"></i> Ingresos Totales</h5>
+                        <p class="card-text fs-4" id="total-ingresos">-</p>
+                    </div>
                 </div>
             </div>
-            <div class="col-lg-6">
-                <div class="table-card">
-                    <h5>Top 5 Máquinas por Pulsos</h5>
-                    <table class="table table-striped"><thead><tr><th>Código</th><th>Pulsos</th></tr></thead><tbody id="topMaquinasPulsos"></tbody></table>
+            <div class="col-md-4">
+                <div class="card text-white bg-info">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-arrow-down-up"></i> Pulsos Totales</h5>
+                        <p class="card-text fs-4" id="total-pulsos">-</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-robot"></i> Máquinas en Consulta</h5>
+                        <p class="card-text fs-4" id="total-maquinas">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de Datos -->
+        <div class="card">
+            <div class="card-header">Resultados de la Consulta</div>
+            <div class="card-body">
+                <div id="loader" class="text-center my-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                </div>
+                <div id="data-table-container" class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Código Máquina</th>
+                                <th>Nombre</th>
+                                <th>Región</th>
+                                <th>Ciudad</th>
+                                <th>Estado</th>
+                                <th>Ingresos</th>
+                                <th>Pulsos</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-table-body"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
-
-    <button class="btn btn-primary btn-refresh" title="Actualizar datos"><i class="fas fa-sync-alt"></i></button>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>

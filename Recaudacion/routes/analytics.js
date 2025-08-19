@@ -1,319 +1,73 @@
 const express = require('express');
 const router = express.Router();
-const Pulso = require('../models/Pulso');
 const Maquina = require('../models/Maquina');
+const Pulso = require('../models/Pulso');
+const moment = require('moment');
 
-/**
- * RUTAS DE ANALYTICS Y ESTADÍSTICAS
- * 
- * Endpoints para obtener datos estadísticos y análisis
- * del sistema de recaudación de máquinas expendedoras.
- */
+// Middleware para manejo de errores asíncronos
+const asyncHandler = fn => (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+};
 
-// ==================== ESTADÍSTICAS GENERALES ====================
+// GET /api/analytics/data
+// Endpoint principal para obtener datos filtrados para el dashboard de tablas.
+router.get('/data', asyncHandler(async (req, res) => {
+    const { region, ciudad, codigoMaquina, fechaInicio, fechaFin } = req.query;
 
-/**
- * GET /api/analytics/dashboard
- * Obtiene estadísticas generales para el dashboard principal
- */
-router.get('/dashboard', async (req, res) => {
-    try {
-        const { region, fechaInicio, fechaFin } = req.query;
+    // 1. Construir filtro de máquinas
+    const maquinaFilter = {};
+    if (region) maquinaFilter['ubicacion.region'] = region;
+    if (ciudad) maquinaFilter['ubicacion.ciudad'] = ciudad;
+    if (codigoMaquina) maquinaFilter['codigoMaquina'] = codigoMaquina;
 
-        // --- 1. FILTROS ---
-        const filtroMaquina = region ? { 'ubicacion.region': region } : {};
-        const filtroFecha = {};
-        if (fechaInicio) filtroFecha.$gte = new Date(`${fechaInicio}T00:00:00.000Z`);
-        if (fechaFin) filtroFecha.$lte = new Date(`${fechaFin}T23:59:59.999Z`);
+    // 2. Obtener máquinas que coinciden con el filtro
+    const maquinas = await Maquina.find(maquinaFilter).lean();
+    const maquinaIds = maquinas.map(m => m._id);
 
-        const maquinas = await Maquina.find(filtroMaquina).lean();
-        const idsMaquinas = maquinas.map(m => m._id);
-
-        const filtroPulsos = { maquina: { $in: idsMaquinas } };
-        if (fechaInicio || fechaFin) filtroPulsos.fechaHora = filtroFecha;
-
-        // --- 2. AGREGACIONES ---
-        const [agregados, distribucionEstados] = await Promise.all([
-            Pulso.aggregate([
-                { $match: filtroPulsos },
-                {
-                    $facet: {
-                        metricas: [
-                            { $group: { _id: null, totalPulsos: { $sum: 1 }, totalIngresos: { $sum: '$valorPulso' }, maquinasActivas: { $addToSet: '$maquina' } } }
-                        ],
-                        tendencia: [
-                            { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$fechaHora' } }, ingresos: { $sum: '$valorPulso' } } },
-                            { $sort: { _id: 1 } },
-                            { $project: { _id: 0, fecha: '$_id', ingresos: 1 } }
-                        ],
-                        distribucionHoraria: [
-                            { $group: { _id: { $hour: { date: '$fechaHora', timezone: 'Europe/Madrid' } }, pulsos: { $sum: 1 } } },
-                            { $sort: { _id: 1 } },
-                            { $project: { _id: 0, hora: '$_id', pulsos: 1 } }
-                        ],
-                        ingresosPorRegion: [
-                            { $lookup: { from: 'maquinas', localField: 'maquina', foreignField: '_id', as: 'info' } },
-                            { $unwind: '$info' },
-                            { $group: { _id: '$info.ubicacion.region', ingresos: { $sum: '$valorPulso' } } },
-                            { $project: { _id: 0, region: '$_id', ingresos: 1 } }
-                        ],
-                        topIngresos: [
-                            { $group: { _id: '$codigoMaquina', totalIngresos: { $sum: '$valorPulso' } } },
-                            { $sort: { totalIngresos: -1 } },
-                            { $limit: 5 },
-                            { $project: { _id: 0, codigo: '$_id', totalIngresos: 1 } }
-                        ],
-                        topPulsos: [
-                            { $group: { _id: '$codigoMaquina', totalPulsos: { $sum: 1 } } },
-                            { $sort: { totalPulsos: -1 } },
-                            { $limit: 5 },
-                            { $project: { _id: 0, codigo: '$_id', totalPulsos: 1 } }
-                        ]
-                    }
-                }
-            ]),
-            Maquina.aggregate([
-                { $match: filtroMaquina },
-                { $group: { _id: '$estado.operativo', cantidad: { $sum: 1 } } },
-                { $project: { _id: 0, estado: '$_id', cantidad: 1 } }
-            ])
-        ]);
-
-        // --- 3. CONSTRUIR RESPUESTA SEGURA ---
-        const resultados = agregados[0] || {};
-        const metricasBase = resultados.metricas?.[0] || { totalPulsos: 0, totalIngresos: 0, maquinasActivas: [] };
-
-        const respuesta = {
-            metricas: {
-                pulsos: metricasBase.totalPulsos,
-                ingresos: metricasBase.totalIngresos,
-                maquinasActivas: metricasBase.maquinasActivas.length,
-                totalMaquinas: maquinas.length,
-                ingresoPromedio: metricasBase.maquinasActivas.length > 0 ? metricasBase.totalIngresos / metricasBase.maquinasActivas.length : 0,
-            },
-            graficas: {
-                tendencia: resultados.tendencia || [],
-                distribucionHoraria: resultados.distribucionHoraria || [],
-                ingresosPorRegion: resultados.ingresosPorRegion || [],
-            },
-            maquinas: {
-                total: maquinas.length,
-                distribucion: distribucionEstados || [],
-            },
-            topMaquinas: {
-                porIngresos: resultados.topIngresos || [],
-                porPulsos: resultados.topPulsos || [],
-            },
+    // 3. Construir filtro de pulsos
+    const pulsoFilter = { maquina: { $in: maquinaIds } };
+    if (fechaInicio && fechaFin) {
+        pulsoFilter.fechaHora = {
+            $gte: moment(fechaInicio).startOf('day').toDate(),
+            $lte: moment(fechaFin).endOf('day').toDate(),
         };
-
-        res.json(respuesta);
-
-    } catch (error) {
-        console.error('Error en GET /dashboard:', error);
-        res.status(500).json({ error: 'Error interno del servidor.' });
     }
-});
 
-// ==================== ANÁLISIS POR PERÍODO ====================
-
-/**
- * GET /api/analytics/periodo
- * Obtiene estadísticas por período específico
- */
-router.get('/periodo', async (req, res) => {
-    try {
-        const { fechaInicio, fechaFin, agrupacion = 'dia' } = req.query;
-
-        if (!fechaInicio || !fechaFin) {
-            return res.status(400).json({
-                error: 'Parámetros faltantes',
-                mensaje: 'Se requieren fechaInicio y fechaFin'
-            });
-        }
-
-        const inicio = new Date(fechaInicio);
-        const fin = new Date(fechaFin);
-        fin.setHours(23, 59, 59, 999);
-
-        let formatoAgrupacion;
-        switch (agrupacion) {
-            case 'hora':
-                formatoAgrupacion = {
-                    año: { $year: '$timestamp' },
-                    mes: { $month: '$timestamp' },
-                    dia: { $dayOfMonth: '$timestamp' },
-                    hora: { $hour: '$timestamp' }
-                };
-                break;
-            case 'mes':
-                formatoAgrupacion = {
-                    año: { $year: '$timestamp' },
-                    mes: { $month: '$timestamp' }
-                };
-                break;
-            default: // día
-                formatoAgrupacion = {
-                    año: { $year: '$timestamp' },
-                    mes: { $month: '$timestamp' },
-                    dia: { $dayOfMonth: '$timestamp' }
-                };
-        }
-
-        const datos = await Pulso.aggregate([
-            { $match: { timestamp: { $gte: inicio, $lte: fin } } },
-            {
-                $group: {
-                    _id: formatoAgrupacion,
-                    pulsos: { $sum: 1 },
-                    ingresos: { $sum: '$valor' },
-                    maquinasUnicas: { $addToSet: '$codigoMaquina' }
-                }
+    // 4. Agregar datos de pulsos
+    const pulsosData = await Pulso.aggregate([
+        { $match: pulsoFilter },
+        {
+            $group: {
+                _id: '$maquina',
+                ingresos: { $sum: '$valorPulso' },
+                pulsos: { $sum: 1 },
             },
-            {
-                $addFields: {
-                    totalMaquinas: { $size: '$maquinasUnicas' }
-                }
-            },
-            { $sort: { '_id': 1 } }
-        ]);
+        },
+    ]);
 
-        res.json({
-            exito: true,
-            periodo: { fechaInicio, fechaFin, agrupacion },
-            datos
-        });
+    // 5. Combinar datos de máquinas y pulsos
+    const dataTable = maquinas.map(maquina => {
+        const pulsoInfo = pulsosData.find(p => p._id.equals(maquina._id));
+        return {
+            ...maquina,
+            ingresos: pulsoInfo?.ingresos || 0,
+            pulsos: pulsoInfo?.pulsos || 0,
+        };
+    });
 
-    } catch (error) {
-        console.error('Error obteniendo análisis por período:', error);
-        res.status(500).json({
-            error: 'Error interno del servidor',
-            mensaje: error.message
-        });
-    }
-});
+    res.json({ dataTable });
+}));
 
-// ==================== ANÁLISIS POR MÁQUINA ====================
+// GET /api/analytics/filters
+// Proporciona los valores únicos para los filtros del dashboard
+router.get('/filters', asyncHandler(async (req, res) => {
+    const [regiones, ciudades, codigosMaquina] = await Promise.all([
+        Maquina.distinct('ubicacion.region'),
+        Maquina.distinct('ubicacion.ciudad'),
+        Maquina.distinct('codigoMaquina'),
+    ]);
 
-/**
- * GET /api/analytics/maquina/:codigo
- * Obtiene estadísticas detalladas de una máquina específica
- */
-router.get('/maquina/:codigo', async (req, res) => {
-    try {
-        const { codigo } = req.params;
-        const { dias = 30 } = req.query;
-
-        const fechaInicio = new Date();
-        fechaInicio.setDate(fechaInicio.getDate() - parseInt(dias));
-        fechaInicio.setHours(0, 0, 0, 0);
-
-        // Estadísticas generales de la máquina
-        const [estadisticasGenerales, datosPorDia] = await Promise.all([
-            Pulso.aggregate([
-                { $match: { codigoMaquina: codigo, timestamp: { $gte: fechaInicio } } },
-                {
-                    $group: {
-                        _id: null,
-                        totalPulsos: { $sum: 1 },
-                        totalIngresos: { $sum: '$valor' },
-                        valorPromedio: { $avg: '$valor' },
-                        primerPulso: { $min: '$timestamp' },
-                        ultimoPulso: { $max: '$timestamp' }
-                    }
-                }
-            ]),
-            Pulso.aggregate([
-                { $match: { codigoMaquina: codigo, timestamp: { $gte: fechaInicio } } },
-                {
-                    $group: {
-                        _id: {
-                            año: { $year: '$timestamp' },
-                            mes: { $month: '$timestamp' },
-                            dia: { $dayOfMonth: '$timestamp' }
-                        },
-                        pulsos: { $sum: 1 },
-                        ingresos: { $sum: '$valor' }
-                    }
-                },
-                { $sort: { '_id': 1 } }
-            ])
-        ]);
-
-        // Información de la máquina
-        const maquina = await Maquina.findOne({ codigoMaquina: codigo });
-
-        res.json({
-            exito: true,
-            maquina: maquina || { codigoMaquina: codigo },
-            periodo: `${dias} días`,
-            estadisticas: estadisticasGenerales[0] || {
-                totalPulsos: 0,
-                totalIngresos: 0,
-                valorPromedio: 0
-            },
-            datosPorDia
-        });
-
-    } catch (error) {
-        console.error('Error obteniendo análisis de máquina:', error);
-        res.status(500).json({
-            error: 'Error interno del servidor',
-            mensaje: error.message
-        });
-    }
-});
-
-// ==================== COMPARATIVAS ====================
-
-/**
- * GET /api/analytics/comparativa
- * Compara rendimiento entre máquinas o períodos
- */
-router.get('/comparativa', async (req, res) => {
-    try {
-        const { tipo = 'maquinas', fechaInicio, fechaFin } = req.query;
-
-        const inicio = fechaInicio ? new Date(fechaInicio) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-        const fin = fechaFin ? new Date(fechaFin) : new Date();
-        fin.setHours(23, 59, 59, 999);
-
-        if (tipo === 'maquinas') {
-            // Comparativa entre máquinas
-            const comparativa = await Pulso.aggregate([
-                { $match: { timestamp: { $gte: inicio, $lte: fin } } },
-                {
-                    $group: {
-                        _id: '$codigoMaquina',
-                        pulsos: { $sum: 1 },
-                        ingresos: { $sum: '$valor' },
-                        valorPromedio: { $avg: '$valor' },
-                        ultimaActividad: { $max: '$timestamp' }
-                    }
-                },
-                { $sort: { ingresos: -1 } }
-            ]);
-
-            res.json({
-                exito: true,
-                tipo: 'maquinas',
-                periodo: { fechaInicio: inicio, fechaFin: fin },
-                comparativa
-            });
-
-        } else {
-            res.status(400).json({
-                error: 'Tipo de comparativa no válido',
-                mensaje: 'Tipos disponibles: maquinas'
-            });
-        }
-
-    } catch (error) {
-        console.error('Error obteniendo comparativa:', error);
-        res.status(500).json({
-            error: 'Error interno del servidor',
-            mensaje: error.message
-        });
-    }
-});
+    res.json({ regiones, ciudades, codigosMaquina });
+}));
 
 module.exports = router;
