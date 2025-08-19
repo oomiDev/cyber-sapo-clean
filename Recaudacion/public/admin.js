@@ -54,7 +54,7 @@ async function cargarRegiones() {
 
 // Actualizar tabla de regiones
 function actualizarTablaRegiones(regiones) {
-    const tbody = document.getElementById('tablaRegiones');
+    const tbody = document.getElementById('tabla-regiones');
     
     if (!regiones || regiones.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay regiones registradas</td></tr>';
@@ -259,8 +259,8 @@ function cancelarEdicionRegion() {
     document.getElementById('region-codigo').disabled = false;
     document.getElementById('region-form-title').textContent = 'Crear Nueva Región';
     document.getElementById('cancelar-edicion-region').style.display = 'none';
-    document.getElementById('colorRegion').value = '#2563eb';
-    document.getElementById('ordenRegion').value = '0';
+    document.getElementById('region-color').value = '#2563eb';
+    document.getElementById('region-orden').value = '0';
 }
 
 // Eliminar región
