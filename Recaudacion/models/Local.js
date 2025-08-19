@@ -44,13 +44,9 @@ const localSchema = new mongoose.Schema({
     ubicacion: {
         // Región administrativa
         region: {
-            type: String,
-            required: [true, 'La región es obligatoria'],
-            trim: true,
-            enum: {
-                values: ['Norte', 'Sur', 'Este', 'Oeste', 'Centro', 'Metropolitana'],
-                message: 'La región debe ser una de las opciones válidas'
-            }
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Region',
+            required: [true, 'La región es obligatoria']
         },
 
         // Ciudad
