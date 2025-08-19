@@ -80,8 +80,8 @@ router.get('/dashboard', async (req, res) => {
         ]);
 
         // --- 3. CONSTRUIR RESPUESTA ---
-        const data = agregados[0];
-        const metricasBase = data.metricas[0] || { totalPulsos: 0, totalIngresos: 0, maquinasActivas: [] };
+        const data = agregados[0] || {};
+        const metricasBase = data.metricas?.[0] || { totalPulsos: 0, totalIngresos: 0, maquinasActivas: [] };
 
         res.json({
             metricas: {
@@ -92,17 +92,17 @@ router.get('/dashboard', async (req, res) => {
                 ingresoPromedio: metricasBase.maquinasActivas.length > 0 ? metricasBase.totalIngresos / metricasBase.maquinasActivas.length : 0,
             },
             graficas: {
-                tendencia: data.tendencia,
-                distribucionHoraria: data.distribucionHoraria,
-                ingresosPorRegion: data.ingresosPorRegion,
+                tendencia: data.tendencia || [],
+                distribucionHoraria: data.distribucionHoraria || [],
+                ingresosPorRegion: data.ingresosPorRegion || [],
             },
             maquinas: {
                 total: maquinas.length,
-                distribucion: distribucionEstados,
+                distribucion: distribucionEstados || [],
             },
             topMaquinas: {
-                porIngresos: data.topIngresos,
-                porPulsos: data.topPulsos,
+                porIngresos: data.topIngresos || [],
+                porPulsos: data.topPulsos || [],
             },
         });
 
