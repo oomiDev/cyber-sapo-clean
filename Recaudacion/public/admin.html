@@ -229,38 +229,17 @@
                     <div class="col-md-8">
                         <div class="admin-card p-4">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="mb-0">
-                                    <i class="fas fa-list me-2"></i>
-                                    Locales Registrados
-                                </h5>
-                                <button class="btn btn-outline-primary btn-sm" onclick="cargarLocales()">
-                                    <i class="fas fa-sync-alt me-1"></i>Actualizar
-                                </button>
+                                <h5 class="card-title mb-0">Locales Registrados</h5>
+                                <div>
+                                    <select id="filtro-region-local" class="form-select form-select-sm d-inline-block w-auto me-2"></select>
+                                    <select id="filtro-tipo-local" class="form-select form-select-sm d-inline-block w-auto me-2"></select>
+                                    <input type="text" id="busqueda-local" class="form-control form-control-sm d-inline-block w-auto" placeholder="Buscar por nombre...">
+                                    <button class="btn btn-primary btn-sm" id="btn-actualizar-locales">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
                             </div>
 
-                            <!-- Filtros rápidos -->
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <select class="form-select form-select-sm" id="filtroRegionLocales" onchange="cargarLocales()">
-                                        <option value="">Todas las regiones</option>
-                                        <!-- Las regiones se cargan dinámicamente -->
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <select class="form-select form-select-sm" id="filtroTipoLocales" onchange="cargarLocales()">
-                                        <option value="">Todos los tipos</option>
-                                        <option value="Oficina">Oficina</option>
-                                        <option value="Centro Comercial">Centro Comercial</option>
-                                        <option value="Hospital">Hospital</option>
-                                        <option value="Escuela">Escuela</option>
-                                        <option value="Otro">Otro</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <input type="text" class="form-control form-control-sm" id="buscarLocal" 
-                                           placeholder="Buscar por nombre..." onkeyup="buscarLocales()">
-                                </div>
-                            </div>
 
                             <div class="table-responsive">
                                 <table class="table table-hover">

@@ -31,8 +31,12 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('cancelar-edicion-tipo-maquina').addEventListener('click', cancelarEdicionTipoMaquina);
     document.getElementById('form-tipo-establecimiento').addEventListener('submit', guardarTipoEstablecimiento);
     document.getElementById('cancelar-edicion-tipo-establecimiento').addEventListener('click', cancelarEdicionTipoEstablecimiento);
-    document.getElementById('formLocal').addEventListener('submit', guardarLocal);
+    document.getElementById('form-local').addEventListener('submit', guardarLocal);
     document.getElementById('formMaquina').addEventListener('submit', guardarMaquina);
+    document.getElementById('btn-actualizar-locales')?.addEventListener('click', cargarLocales);
+    document.getElementById('busqueda-local')?.addEventListener('input', cargarLocales);
+    document.getElementById('filtro-region-local')?.addEventListener('change', cargarLocales);
+    document.getElementById('filtro-tipo-local')?.addEventListener('change', cargarLocales);
 });
 
 // ==================== GESTIÓN DE REGIONES ====================
@@ -563,12 +567,14 @@ async function cargarTiposEstablecimientoParaSelects() {
 // Cargar lista de locales
 async function cargarLocales() {
     try {
-        const region = document.getElementById('filtroRegionLocales').value;
-        const tipo = document.getElementById('filtroTipoLocales').value;
+        const region = document.getElementById('filtro-region-local').value;
+        const tipo = document.getElementById('filtro-tipo-local').value;
+        const busqueda = document.getElementById('busqueda-local').value;
         
         let url = '/api/locales?';
         if (region) url += `region=${region}&`;
         if (tipo) url += `tipo=${tipo}&`;
+        if (busqueda) url += `busqueda=${busqueda}&`;
 
         const response = await fetch(url);
         const datos = await response.json();
