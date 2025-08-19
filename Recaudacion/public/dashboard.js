@@ -1,274 +1,122 @@
-// Variables globales
-let charts = {};
-let datosActuales = {};
+document.addEventListener('DOMContentLoaded', () => {
+    let charts = {};
 
-// Inicializar aplicación
-function inicializarApp() {
-    inicializarFechas();
-    cargarDatos();
-    actualizarReloj();
-    setInterval(actualizarReloj, 1000);
-    setInterval(cargarDatos, 30000); // Actualizar cada 30 segundos
+    const inicializarApp = () => {
+        inicializarFechas();
+        cargarFiltros();
+        cargarDatos();
+        setInterval(cargarDatos, 30000); // Auto-refresh
 
-    // Añadir event listener para el botón de aplicar filtros
-    const aplicarFiltrosBtn = document.getElementById('aplicarFiltros');
-    if (aplicarFiltrosBtn) {
-        aplicarFiltrosBtn.addEventListener('click', aplicarFiltros);
-    }
-
-    // Añadir event listener para el botón de refrescar
-    const refreshButton = document.querySelector('.btn-refresh');
-    if (refreshButton) {
-        refreshButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            cargarDatos();
-        });
-    }
-}
-
-// Esperar a que el DOM esté completamente cargado para inicializar la aplicación
-document.addEventListener('DOMContentLoaded', inicializarApp);
-
-// Configurar fechas por defecto
-function inicializarFechas() {
-    const hoy = new Date();
-    const hace7Dias = new Date(hoy.getTime() - 7 * 24 * 60 * 60 * 1000);
-    
-    document.getElementById('fechaFin').value = hoy.toISOString().split('T')[0];
-    document.getElementById('fechaInicio').value = hace7Dias.toISOString().split('T')[0];
-}
-
-// Actualizar reloj
-function actualizarReloj() {
-    const ahora = new Date();
-    document.getElementById('currentTime').textContent = 
-        ahora.toLocaleString('es-ES', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        });
-}
-
-// Cargar datos del dashboard
-async function cargarDatos() {
-    const loadingOverlay = document.getElementById('loading-overlay');
-    loadingOverlay.style.display = 'flex';
-    try {
-        const region = document.getElementById('filtroRegion').value;
-        const fechaInicio = document.getElementById('fechaInicio').value;
-        const fechaFin = document.getElementById('fechaFin').value;
-
-        const url = new URL('/api/analytics/dashboard', window.location.origin);
-        if (region) url.searchParams.append('region', region);
-        if (fechaInicio) url.searchParams.append('fechaInicio', fechaInicio);
-        if (fechaFin) url.searchParams.append('fechaFin', fechaFin);
-
-        const response = await fetch(url);
-        const datos = await response.json();
-        
-        if (response.ok) {
-            datosActuales = datos;
-            actualizarMetricas(datos.metricas);
-            actualizarGraficas(datos.graficas);
-            actualizarEstadoMaquinas(datos.maquinas);
-            actualizarTablaTopMaquinas(datos.topMaquinas);
-        } else {
-            console.error('Error cargando datos:', datos.error);
-            mostrarError('No se pudieron cargar los datos del dashboard.');
-        }
-    } catch (error) {
-        console.error('Error de conexión:', error);
-        mostrarError('Error de conexión con el servidor.');
-    } finally {
-        loadingOverlay.style.display = 'none';
-    }
-}
-
-// Mostrar mensaje de error
-function mostrarError(mensaje) {
-    const errorContainer = document.getElementById('error-container');
-    errorContainer.textContent = mensaje;
-    errorContainer.style.display = 'block';
-    setTimeout(() => {
-        errorContainer.style.display = 'none';
-    }, 5000);
-}
-
-// Actualizar métricas principales
-function actualizarMetricas(metricas) {
-    document.getElementById('pulsosHoy').textContent = metricas.pulsos.toLocaleString();
-    document.getElementById('ingresosHoy').textContent = '€' + (metricas.ingresos || 0).toFixed(2);
-    document.getElementById('maquinasActivas').textContent = metricas.maquinasActivas;
-    document.getElementById('totalMaquinas').textContent = `de ${metricas.totalMaquinas} total`;
-
-    actualizarCrecimiento(document.getElementById('crecimientoPulsos'), metricas.crecimientoPulsos);
-    actualizarCrecimiento(document.getElementById('crecimientoIngresos'), metricas.crecimientoIngresos);
-}
-
-// Actualizar indicadores de crecimiento
-function actualizarCrecimiento(elemento, valor) {
-    if (valor === null || valor === undefined) {
-        elemento.style.display = 'none';
-        return;
-    }
-    elemento.style.display = 'inline-block';
-    const icono = valor >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
-    const clase = valor >= 0 ? 'growth-positive' : 'growth-negative';
-
-    elemento.className = 'growth ' + clase;
-    elemento.innerHTML = `<i class="fas ${icono}"></i> ${Math.abs(valor).toFixed(1)}%`;
-}
-
-// Actualizar gráficas
-function actualizarGraficas(graficas) {
-    actualizarGraficaTendencia(graficas.tendencia);
-    actualizarGraficaHoraria(graficas.distribucionHoraria);
-}
-
-// Gráfica de tendencia
-function actualizarGraficaTendencia(datos) {
-    const canvas = document.getElementById('chartTendencia');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (charts.tendencia) charts.tendencia.destroy();
-
-    const labels = datos.map(d => moment(d.fecha).format('DD/MM'));
-    charts.tendencia = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Ingresos (€)',
-                data: datos.map(d => d.ingresos),
-                borderColor: '#10b981',
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                tension: 0.4,
-                yAxisID: 'y'
-            }, {
-                label: 'Pulsos',
-                data: datos.map(d => d.pulsos),
-                borderColor: '#2563eb',
-                backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                tension: 0.4,
-                yAxisID: 'y1'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Ingresos (€)' } },
-                y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'Pulsos' }, grid: { drawOnChartArea: false } }
-            }
-        }
-    });
-}
-
-// Gráfica de distribución horaria
-function actualizarGraficaHoraria(datos) {
-    const canvas = document.getElementById('chartHorario');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (charts.horario) charts.horario.destroy();
-
-    // Rellenar horas sin datos
-    const datosCompletos = Array.from({ length: 24 }, (_, i) => {
-        const datoExistente = datos.find(d => d.hora === i);
-        return datoExistente || { hora: i, pulsos: 0 };
-    });
-
-    charts.horario = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: datosCompletos.map(d => d.hora + ':00'),
-            datasets: [{
-                label: 'Pulsos por Hora',
-                data: datosCompletos.map(d => d.pulsos),
-                backgroundColor: 'rgba(37, 99, 235, 0.6)',
-                borderColor: '#2563eb',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: { beginAtZero: true, title: { display: true, text: 'Número de Pulsos' } },
-                x: { title: { display: true, text: 'Hora del Día' } }
-            }
-        }
-    });
-}
-
-// Actualizar estado de máquinas
-function actualizarEstadoMaquinas(maquinas) {
-    const canvas = document.getElementById('chartEstados');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (charts.estados) charts.estados.destroy();
-
-    const labels = maquinas.distribucion.map(e => e.estado);
-    const data = maquinas.distribucion.map(e => e.cantidad);
-    const colores = {
-        'Activa': '#10b981',
-        'Inactiva': '#6b7280',
-        'Mantenimiento': '#f59e0b',
-        'Averiada': '#ef4444'
+        document.getElementById('aplicarFiltros').addEventListener('click', cargarDatos);
+        document.querySelector('.btn-refresh').addEventListener('click', cargarDatos);
     };
 
-    charts.estados = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: labels.map(l => colores[l] || '#6b7280')
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom' } }
+    const inicializarFechas = () => {
+        const hoy = new Date();
+        const hace7Dias = new Date(hoy.getTime() - 7 * 24 * 60 * 60 * 1000);
+        document.getElementById('fechaFin').value = hoy.toISOString().split('T')[0];
+        document.getElementById('fechaInicio').value = hace7Dias.toISOString().split('T')[0];
+    };
+
+    const cargarFiltros = async () => {
+        try {
+            const response = await fetch('/api/locales/regiones');
+            if (!response.ok) return;
+            const regiones = await response.json();
+            const regionFilter = document.getElementById('regionFilter');
+            regionFilter.innerHTML = '<option value="">Todas las regiones</option>';
+            regiones.forEach(region => {
+                regionFilter.innerHTML += `<option value="${region}">${region}</option>`;
+            });
+        } catch (error) {
+            console.error('Error cargando filtros de región:', error);
         }
-    });
+    };
 
-    document.getElementById('totalMaquinas').textContent = `de ${maquinas.total} total`;
-}
+    const cargarDatos = async () => {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        loadingOverlay.style.opacity = '1';
+        loadingOverlay.style.visibility = 'visible';
 
-// Actualizar tabla de top máquinas
-function actualizarTablaTopMaquinas(ranking) {
-    const tbody = document.getElementById('tablaTopMaquinas');
-    if (!tbody) return;
+        try {
+            const params = new URLSearchParams({
+                fechaInicio: document.getElementById('fechaInicio').value,
+                fechaFin: document.getElementById('fechaFin').value,
+                region: document.getElementById('regionFilter').value
+            });
+            const response = await fetch(`/api/analytics/dashboard?${params}`);
+            const data = await response.json();
 
-    if (ranking.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay datos de máquinas disponibles</td></tr>';
-        return;
-    }
+            if (!response.ok) throw new Error(data.error || 'Error del servidor');
 
-    tbody.innerHTML = ranking.map((maquina, index) => {
-        const estadoClass = maquina.estado ? maquina.estado.toLowerCase() : 'inactiva';
-        return `
-        <tr>
-            <td>
-                <strong>#${index + 1} ${maquina.codigo}</strong>
-                <br><small class="text-muted">${maquina.nombre || 'Sin nombre'}</small>
-            </td>
-            <td>${maquina.region || 'N/A'}</td>
-            <td>${maquina.totalPulsos.toLocaleString()}</td>
-            <td>€${(maquina.totalIngresos || 0).toFixed(2)}</td>
-            <td>
-                <span class="status-indicator status-${estadoClass}"></span>
-                ${maquina.estado || 'Inactiva'}
-            </td>
-            <td>${maquina.ultimaActividad ? moment(maquina.ultimaActividad).fromNow() : 'Nunca'}</td>
-        </tr>
-    `}).join('');
-}
+            actualizarMetricas(data.metricas);
+            actualizarGraficas(data.graficas, data.maquinas, data.topMaquinas);
 
-// Aplicar filtros
-function aplicarFiltros() {
-    cargarDatos();
-}
+        } catch (error) {
+            console.error('Error al cargar datos del dashboard:', error);
+            alert('No se pudieron cargar los datos. Intente de nuevo.');
+        } finally {
+            loadingOverlay.style.opacity = '0';
+            loadingOverlay.style.visibility = 'hidden';
+        }
+    };
+
+    const actualizarMetricas = (metricas) => {
+        document.getElementById('totalIngresos').textContent = `€${(metricas.ingresos || 0).toFixed(2)}`;
+        document.getElementById('totalPulsos').textContent = (metricas.pulsos || 0).toLocaleString();
+        document.getElementById('totalMaquinas').textContent = `${metricas.maquinasActivas || 0} / ${metricas.totalMaquinas || 0}`;
+        document.getElementById('ingresoPromedio').textContent = `€${(metricas.ingresoPromedio || 0).toFixed(2)}`;
+    };
+
+    const actualizarGraficas = (graficas, maquinas, topMaquinas) => {
+        renderizarGrafico(charts, 'tendenciaIngresosChart', 'line', {
+            labels: graficas.tendencia.map(d => moment(d.fecha).format('DD/MM')),
+            datasets: [{
+                label: 'Ingresos (€)',
+                data: graficas.tendencia.map(d => d.ingresos),
+                borderColor: '#0d6efd', tension: 0.3
+            }]
+        });
+
+        renderizarGrafico(charts, 'distribucionHorariaChart', 'bar', {
+            labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
+            datasets: [{
+                label: 'Pulsos por Hora',
+                data: Array.from({ length: 24 }, (_, i) => graficas.distribucionHoraria.find(d => d.hora === i)?.pulsos || 0),
+                backgroundColor: 'rgba(13, 110, 253, 0.5)'
+            }]
+        });
+
+        renderizarGrafico(charts, 'ingresosPorRegionChart', 'doughnut', {
+            labels: graficas.ingresosPorRegion.map(r => r.region),
+            datasets: [{
+                data: graficas.ingresosPorRegion.map(r => r.ingresos),
+                backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6c757d']
+            }]
+        });
+
+        renderizarGrafico(charts, 'estadoMaquinasChart', 'pie', {
+            labels: maquinas.distribucion.map(e => e.estado),
+            datasets: [{
+                data: maquinas.distribucion.map(e => e.cantidad),
+                backgroundColor: maquinas.distribucion.map(e => ({ 'Activa': '#198754', 'Inactiva': '#6c757d', 'Mantenimiento': '#ffc107', 'Averiada': '#dc3545' }[e.estado]))
+            }]
+        });
+
+        actualizarTabla('topMaquinasIngresos', topMaquinas.porIngresos, row => `<td>${row.codigo}</td><td>€${(row.totalIngresos || 0).toFixed(2)}</td>`);
+        actualizarTabla('topMaquinasPulsos', topMaquinas.porPulsos, row => `<td>${row.codigo}</td><td>${(row.totalPulsos || 0).toLocaleString()}</td>`);
+    };
+
+    const renderizarGrafico = (chartInstance, canvasId, type, data) => {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        if (chartInstance[canvasId]) chartInstance[canvasId].destroy();
+        chartInstance[canvasId] = new Chart(ctx, { type, data, options: { responsive: true, maintainAspectRatio: false } });
+    };
+
+    const actualizarTabla = (tbodyId, data, rowTemplate) => {
+        const tbody = document.getElementById(tbodyId);
+        tbody.innerHTML = data.length > 0 ? data.map(item => `<tr>${rowTemplate(item)}</tr>`).join('') : `<tr><td colspan="2" class="text-center">No hay datos</td></tr>`;
+    };
+
+    inicializarApp();
+});

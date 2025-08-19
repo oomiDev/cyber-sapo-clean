@@ -3,300 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Recaudación - Dashboard</title>
-    
-    <!-- CSS Framework y estilos -->
+    <title>Dashboard - Sistema de Recaudación</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.min.css" rel="stylesheet">
-    
-    <style>
-        :root {
-            --primary-color: #2563eb;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --danger-color: #ef4444;
-            --dark-color: #1f2937;
-            --light-bg: #f8fafc;
-        }
-
-        body {
-            background-color: var(--light-bg);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        .navbar-brand {
-            font-weight: bold;
-            color: var(--primary-color) !important;
-        }
-
-        .metric-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: transform 0.2s ease;
-        }
-
-        .metric-card:hover {
-            transform: translateY(-2px);
-        }
-
-        .metric-value {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin: 0;
-        }
-
-        .metric-label {
-            color: #6b7280;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .growth-positive {
-            color: var(--success-color);
-        }
-
-        .growth-negative {
-            color: var(--danger-color);
-        }
-
-        .chart-container {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .status-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-        }
-
-        .status-active { background-color: var(--success-color); }
-        .status-inactive { background-color: #6b7280; }
-        .status-maintenance { background-color: var(--warning-color); }
-        .status-broken { background-color: var(--danger-color); }
-
-        .loading {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 200px;
-        }
-
-        .filter-section {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .table-responsive {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .btn-refresh {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            z-index: 1000;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-    </style>
+    <link href="/css/analytics.css" rel="stylesheet">
 </head>
 <body>
-    <div id="loading-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 2000; display: none; justify-content: center; align-items: center;">
-        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-            <span class="visually-hidden">Cargando...</span>
-        </div>
+    <div id="loading-overlay">
+        <div class="spinner"></div>
     </div>
-    <!-- Navegación -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">
-                <i class="fas fa-chart-line me-2"></i>
-                Sistema de Recaudación
-            </a>
+            <a class="navbar-brand" href="/index.html"><i class="fas fa-chart-line me-2"></i>Dashboard de Recaudación</a>
             <div class="navbar-nav ms-auto">
-                <span class="navbar-text">
-                    <i class="fas fa-clock me-1"></i>
-                    <span id="currentTime"></span>
-                </span>
+                <a class="nav-link" href="/admin.html"><i class="fas fa-tachometer-alt me-1"></i>Admin</a>
+                <a class="nav-link" href="/simulador-maquina.html"><i class="fas fa-gamepad me-1"></i>Simulador</a>
             </div>
         </div>
     </nav>
 
-    <div class="container-fluid py-4">
-        <!-- Filtros -->
-        <div class="filter-section">
-            <div class="row align-items-end">
-                <div class="col-md-3">
-                    <label class="form-label">Región</label>
-                    <select class="form-select" id="filtroRegion">
-                        <option value="">Todas las regiones</option>
-                        <option value="Norte">Norte</option>
-                        <option value="Sur">Sur</option>
-                        <option value="Este">Este</option>
-                        <option value="Oeste">Oeste</option>
-                        <option value="Centro">Centro</option>
-                        <option value="Metropolitana">Metropolitana</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Fecha Inicio</label>
-                    <input type="date" class="form-control" id="fechaInicio">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Fecha Fin</label>
-                    <input type="date" class="form-control" id="fechaFin">
-                </div>
-                <div class="col-md-3">
-                    <button class="btn btn-primary w-100" id="aplicarFiltros">
-                        <i class="fas fa-filter me-2"></i>Aplicar Filtros
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Métricas Principales -->
+    <div class="container-fluid p-4">
         <div class="row mb-4">
             <div class="col-md-3">
-                <div class="metric-card p-4">
-                    <div class="metric-label">Pulsos Hoy</div>
-                    <div class="metric-value text-primary" id="pulsosHoy">-</div>
-                    <div class="small">
-                        <span id="crecimientoPulsos" class="growth-positive">
-                            <i class="fas fa-arrow-up"></i> 0%
-                        </span>
-                        vs ayer
-                    </div>
-                </div>
+                <label for="fechaInicio" class="form-label">Fecha Inicio</label>
+                <input type="date" id="fechaInicio" class="form-control">
             </div>
             <div class="col-md-3">
-                <div class="metric-card p-4">
-                    <div class="metric-label">Ingresos Hoy</div>
-                    <div class="metric-value text-success" id="ingresosHoy">-</div>
-                    <div class="small">
-                        <span id="crecimientoIngresos" class="growth-positive">
-                            <i class="fas fa-arrow-up"></i> 0%
-                        </span>
-                        vs ayer
-                    </div>
-                </div>
+                <label for="fechaFin" class="form-label">Fecha Fin</label>
+                <input type="date" id="fechaFin" class="form-control">
             </div>
             <div class="col-md-3">
-                <div class="metric-card p-4">
-                    <div class="metric-label">Máquinas Activas</div>
-                    <div class="metric-value text-info" id="maquinasActivas">-</div>
-                    <div class="small">
-                        <span id="totalMaquinas">de 0 total</span>
-                    </div>
-                </div>
+                <label for="regionFilter" class="form-label">Región</label>
+                <select id="regionFilter" class="form-select"></select>
             </div>
-            <div class="col-md-3">
-                <div class="metric-card p-4">
-                    <div class="metric-label">Promedio por Máquina</div>
-                    <div class="metric-value text-warning" id="promedioPorMaquina">-</div>
-                    <div class="small">ingresos diarios</div>
-                </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button id="aplicarFiltros" class="btn btn-primary w-100">Aplicar Filtros</button>
             </div>
         </div>
 
-        <!-- Gráficas -->
-        <div class="row">
-            <div class="col-md-8">
-                <div class="chart-container">
-                    <h5 class="mb-3">
-                        <i class="fas fa-chart-line me-2"></i>
-                        Tendencia de Ingresos (Últimos 7 días)
-                    </h5>
-                    <canvas id="chartTendencia" height="100"></canvas>
-                </div>
+        <div class="row gy-4">
+            <!-- Métricas Principales -->
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-card bg-primary text-white"><h5 class="card-title">Ingresos Totales</h5><p id="totalIngresos" class="card-text"></p></div>
             </div>
-            <div class="col-md-4">
-                <div class="chart-container">
-                    <h5 class="mb-3">
-                        <i class="fas fa-chart-pie me-2"></i>
-                        Estado de Máquinas
-                    </h5>
-                    <canvas id="chartEstados" height="200"></canvas>
-                </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-card bg-info text-white"><h5 class="card-title">Pulsos Registrados</h5><p id="totalPulsos" class="card-text"></p></div>
             </div>
-        </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-card bg-success text-white"><h5 class="card-title">Máquinas Activas</h5><p id="totalMaquinas" class="card-text"></p></div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-card bg-secondary text-white"><h5 class="card-title">Ingreso Promedio</h5><p id="ingresoPromedio" class="card-text"></p></div>
+            </div>
 
-        <div class="row">
-            <div class="col-md-6">
-                <div class="chart-container">
-                    <h5 class="mb-3">
-                        <i class="fas fa-clock me-2"></i>
-                        Distribución por Horas
-                    </h5>
-                    <canvas id="chartHorario" height="150"></canvas>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="chart-container">
-                    <h5 class="mb-3">
-                        <i class="fas fa-map-marker-alt me-2"></i>
-                        Ingresos por Región
-                    </h5>
-                    <canvas id="chartRegiones" height="150"></canvas>
-                </div>
-            </div>
-        </div>
+            <!-- Gráficos -->
+            <div class="col-lg-6"><div class="chart-card"><canvas id="tendenciaIngresosChart"></canvas></div></div>
+            <div class="col-lg-6"><div class="chart-card"><canvas id="distribucionHorariaChart"></canvas></div></div>
+            <div class="col-lg-6"><div class="chart-card"><canvas id="ingresosPorRegionChart"></canvas></div></div>
+            <div class="col-lg-6"><div class="chart-card"><canvas id="estadoMaquinasChart"></canvas></div></div>
 
-        <!-- Tabla de Máquinas Top -->
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead class="table-light">
-                    <tr>
-                        <th>
-                            <i class="fas fa-trophy me-2"></i>
-                            Top Máquinas por Rendimiento
-                        </th>
-                        <th>Región</th>
-                        <th>Pulsos Hoy</th>
-                        <th>Ingresos Hoy</th>
-                        <th>Estado</th>
-                        <th>Última Actividad</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaTopMaquinas">
-                    <tr>
-                        <td colspan="6" class="text-center">
-                            <div class="loading">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Cargando...</span>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <!-- Tablas -->
+            <div class="col-lg-6">
+                <div class="table-card">
+                    <h5>Top 5 Máquinas por Ingresos</h5>
+                    <table class="table table-striped"><thead><tr><th>Código</th><th>Ingresos</th></tr></thead><tbody id="topMaquinasIngresos"></tbody></table>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="table-card">
+                    <h5>Top 5 Máquinas por Pulsos</h5>
+                    <table class="table table-striped"><thead><tr><th>Código</th><th>Pulsos</th></tr></thead><tbody id="topMaquinasPulsos"></tbody></table>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Botón de actualización -->
-    <button class="btn btn-primary btn-refresh" title="Actualizar datos">
-        <i class="fas fa-sync-alt"></i>
-    </button>
+    <button class="btn btn-primary btn-refresh" title="Actualizar datos"><i class="fas fa-sync-alt"></i></button>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.umd.min.js"></script>
+    <script src="/dashboard.js" defer></script>
 </body>
-
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.umd.min.js"></script>
-<script src="./dashboard.js" defer></script>
 </html>
