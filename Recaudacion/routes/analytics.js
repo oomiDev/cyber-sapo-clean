@@ -74,7 +74,7 @@ router.get('/dashboard', async (req, res) => {
             ]),
             Maquina.aggregate([
                 { $match: filtroMaquina },
-                { $group: { _id: '$estado.operativo', cantidad: { $sum: 1 } } },
+                { $group: { _id: '$estado.sistema', cantidad: { $sum: 1 } } },
                 { $project: { _id: 0, estado: '$_id', cantidad: 1 } }
             ])
         ]);
