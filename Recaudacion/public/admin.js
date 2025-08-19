@@ -5,6 +5,7 @@ let maquinasData = [];
 
 // Inicializar aplicación
 document.addEventListener('DOMContentLoaded', function() {
+    // --- Carga inicial de datos ---
     cargarRegiones();
     cargarLocales();
     cargarMaquinas();
@@ -13,30 +14,37 @@ document.addEventListener('DOMContentLoaded', function() {
     cargarTiposEstablecimiento();
     cargarTiposEstablecimientoParaSelects();
 
-    // Configurar formularios
-    document.getElementById('form-region').addEventListener('submit', guardarRegion);
-    document.getElementById('cancelar-edicion-region').addEventListener('click', cancelarEdicionRegion);
+    // --- Asignación segura de Event Listeners ---
+    const safeAddEventListener = (id, event, handler) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener(event, handler);
+        }
+    };
 
-    // Listeners para filtros de regiones
-    const filtroEstadoRegiones = document.getElementById('filtroEstadoRegiones');
-    const ordenRegiones = document.getElementById('ordenRegiones');
+    // Gestión de Regiones
+    safeAddEventListener('form-region', 'submit', guardarRegion);
+    safeAddEventListener('cancelar-edicion-region', 'click', cancelarEdicionRegion);
+    safeAddEventListener('filtroEstadoRegiones', 'change', cargarRegiones);
+    safeAddEventListener('ordenRegiones', 'change', cargarRegiones);
 
-    if (filtroEstadoRegiones) {
-        filtroEstadoRegiones.addEventListener('change', cargarRegiones);
-    }
-    if (ordenRegiones) {
-        ordenRegiones.addEventListener('change', cargarRegiones);
-    }
-    document.getElementById('form-tipo-maquina').addEventListener('submit', guardarTipoMaquina);
-    document.getElementById('cancelar-edicion-tipo-maquina').addEventListener('click', cancelarEdicionTipoMaquina);
-    document.getElementById('form-tipo-establecimiento').addEventListener('submit', guardarTipoEstablecimiento);
-    document.getElementById('cancelar-edicion-tipo-establecimiento').addEventListener('click', cancelarEdicionTipoEstablecimiento);
-    document.getElementById('form-local').addEventListener('submit', guardarLocal);
-    document.getElementById('formMaquina').addEventListener('submit', guardarMaquina);
-    document.getElementById('btn-actualizar-locales')?.addEventListener('click', cargarLocales);
-    document.getElementById('busqueda-local')?.addEventListener('input', cargarLocales);
-    document.getElementById('filtro-region-local')?.addEventListener('change', cargarLocales);
-    document.getElementById('filtro-tipo-local')?.addEventListener('change', cargarLocales);
+    // Gestión de Tipos de Máquina
+    safeAddEventListener('form-tipo-maquina', 'submit', guardarTipoMaquina);
+    safeAddEventListener('cancelar-edicion-tipo-maquina', 'click', cancelarEdicionTipoMaquina);
+
+    // Gestión de Tipos de Establecimiento
+    safeAddEventListener('form-tipo-establecimiento', 'submit', guardarTipoEstablecimiento);
+    safeAddEventListener('cancelar-edicion-tipo-establecimiento', 'click', cancelarEdicionTipoEstablecimiento);
+
+    // Gestión de Locales
+    safeAddEventListener('form-local', 'submit', guardarLocal);
+    safeAddEventListener('btn-actualizar-locales', 'click', cargarLocales);
+    safeAddEventListener('busqueda-local', 'input', cargarLocales);
+    safeAddEventListener('filtro-region-local', 'change', cargarLocales);
+    safeAddEventListener('filtro-tipo-local', 'change', cargarLocales);
+
+    // Gestión de Máquinas
+    safeAddEventListener('formMaquina', 'submit', guardarMaquina);
 });
 
 // ==================== GESTIÓN DE REGIONES ====================
@@ -629,19 +637,18 @@ function actualizarTablaLocales(locales) {
 
 // Guardar nuevo local
 async function guardarLocal(event) {
-    event.preventDefault();
-    
+    event.preventDefault(); // Prevenir el refresco de la página
+
     const datosLocal = {
         codigoLocal: document.getElementById('codigoLocal').value,
         nombre: document.getElementById('nombreLocal').value,
         tipoEstablecimiento: document.getElementById('tipoEstablecimiento').value,
         ubicacion: {
             region: document.getElementById('regionLocal').value,
-            calle: document.getElementById('direccionLocal').value,
             ciudad: document.getElementById('ciudadLocal').value,
             direccion: document.getElementById('direccionLocal').value,
-            codigoPostal: document.getElementById('codigoPostal').value,
-            piso: document.getElementById('pisoZonaLocal').value
+            codigoPostal: document.getElementById('codigo-postal').value,
+            piso: document.getElementById('piso-zona-local').value
         },
         contacto: {
             nombreResponsable: document.getElementById('responsableLocal').value,
