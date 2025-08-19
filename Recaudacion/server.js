@@ -31,7 +31,7 @@ app.use(
             ...helmet.contentSecurityPolicy.getDefaultDirectives(),
             "script-src": [
                 "'self'", 
-                "'sha256-2J/+R9s94sO9lH0q9miRwuKuFisH2OMhjxu8tVgo6UFs='",
+                "'unsafe-inline'",
                 "https://cdn.jsdelivr.net"
             ],
         },
