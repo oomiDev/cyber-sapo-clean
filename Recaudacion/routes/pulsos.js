@@ -78,6 +78,7 @@ router.post('/recibir', async (req, res) => {
 
         // PASO 5: Crear registro del pulso
         const nuevoPulso = new Pulso({
+            temporal: {}, // Inicializar para que el middleware pre-save funcione
             maquina: maquina._id,
             codigoMaquina: maquina.codigoMaquina,
             valorPulso: valorFinal, // El modelo espera 'valorPulso'
