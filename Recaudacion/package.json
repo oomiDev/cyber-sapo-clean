@@ -8,6 +8,7 @@
     "build": "echo 'Build completed - static files ready'",
     "dev": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
+    "seed": "node scripts/seed-database.js",
     "railway-deploy": "railway up",
     "status": "pm2 status",
     "logs": "pm2 logs recaudacion",
