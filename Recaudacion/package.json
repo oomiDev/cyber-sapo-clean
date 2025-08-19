@@ -4,7 +4,7 @@
   "description": "Sistema de facturación y seguimiento de ingresos para máquinas expendedoras",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "npm run seed && node server.js",
     "build": "echo 'Build completed - static files ready'",
     "dev": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1",

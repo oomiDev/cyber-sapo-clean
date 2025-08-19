@@ -14,7 +14,7 @@ const MONGODB_URI = process.env.MONGODB_URI;
 const seedDatabase = async () => {
     if (!MONGODB_URI) {
         console.error('❌ Error: La variable de entorno MONGODB_URI no está definida.');
-        process.exit(1);
+        return;
     }
 
     try {
@@ -66,11 +66,9 @@ const seedDatabase = async () => {
 
     } catch (error) {
         console.error('❌ Error durante la inicialización de la base de datos:', error);
-        process.exit(1);
     } finally {
         await mongoose.disconnect();
         console.log('🔌 Desconectado de la base de datos.');
-        process.exit(0);
     }
 };
 
