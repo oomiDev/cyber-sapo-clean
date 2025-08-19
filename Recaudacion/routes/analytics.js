@@ -18,79 +18,81 @@ const Maquina = require('../models/Maquina');
  */
 router.get('/dashboard', async (req, res) => {
     try {
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-        
-        const mañana = new Date(hoy);
-        mañana.setDate(mañana.getDate() + 1);
+        const { region, fechaInicio, fechaFin } = req.query;
 
-        // Estadísticas básicas
-        const [
-            totalMaquinas,
-            maquinasActivas,
-            pulsosHoy,
-            ingresosHoy,
-            totalIngresos
-        ] = await Promise.all([
-            Maquina.countDocuments({ eliminado: { $ne: true } }),
-            Maquina.countDocuments({ estado: 'Activa', eliminado: { $ne: true } }),
-            Pulso.countDocuments({ timestamp: { $gte: hoy, $lt: mañana } }),
+        // Construir filtro de fecha
+        let filtroFecha = {};
+        if (fechaInicio && fechaFin) {
+            const inicio = new Date(fechaInicio);
+            const fin = new Date(fechaFin);
+            inicio.setHours(0, 0, 0, 0);
+            fin.setHours(23, 59, 59, 999);
+            filtroFecha = { timestamp: { $gte: inicio, $lte: fin } };
+        } else {
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            const mañana = new Date(hoy);
+            mañana.setDate(mañana.getDate() + 1);
+            filtroFecha = { timestamp: { $gte: hoy, $lt: mañana } };
+        }
+
+        // Construir filtro de máquina por región
+        let filtroMaquina = { eliminado: { $ne: true } };
+        let filtroPulsoMaquina = {};
+        if (region) {
+            filtroMaquina.region = region;
+            const maquinasEnRegion = await Maquina.find(filtroMaquina).select('codigoMaquina');
+            const codigosMaquina = maquinasEnRegion.map(m => m.codigoMaquina);
+            filtroPulsoMaquina = { codigoMaquina: { $in: codigosMaquina } };
+        }
+
+        // Combinar filtros para pulsos
+        const filtroPulsos = { ...filtroFecha, ...filtroPulsoMaquina };
+
+        // Métricas principales
+        const [totalMaquinas, maquinasActivas, pulsosPeriodo, ingresosPeriodo, totalIngresos] = await Promise.all([
+            Maquina.countDocuments(filtroMaquina),
+            Maquina.countDocuments({ ...filtroMaquina, estado: 'Activa' }),
+            Pulso.countDocuments(filtroPulsos),
+            Pulso.aggregate([{ $match: filtroPulsos }, { $group: { _id: null, total: { $sum: '$valor' } } }]),
+            Pulso.aggregate([{ $group: { _id: null, total: { $sum: '$valor' } } }]) // Total histórico no se filtra
+        ]);
+
+        // Gráficas y tablas
+        const [topMaquinas, ingresosPorHora, estadoMaquinas] = await Promise.all([
             Pulso.aggregate([
-                { $match: { timestamp: { $gte: hoy, $lt: mañana } } },
-                { $group: { _id: null, total: { $sum: '$valor' } } }
+                { $match: filtroPulsos },
+                { $group: { _id: '$codigoMaquina', pulsos: { $sum: 1 }, ingresos: { $sum: '$valor' } } },
+                { $sort: { ingresos: -1 } },
+                { $limit: 5 }
             ]),
             Pulso.aggregate([
-                { $group: { _id: null, total: { $sum: '$valor' } } }
-            ])
-        ]);
-
-        // Top máquinas por ingresos hoy
-        const topMaquinas = await Pulso.aggregate([
-            { $match: { timestamp: { $gte: hoy, $lt: mañana } } },
-            {
-                $group: {
-                    _id: '$codigoMaquina',
-                    pulsos: { $sum: 1 },
-                    ingresos: { $sum: '$valor' }
-                }
-            },
-            { $sort: { ingresos: -1 } },
-            { $limit: 5 }
-        ]);
-
-        // Ingresos por hora del día actual
-        const ingresosPorHora = await Pulso.aggregate([
-            { $match: { timestamp: { $gte: hoy, $lt: mañana } } },
-            {
-                $group: {
-                    _id: { $hour: '$timestamp' },
-                    ingresos: { $sum: '$valor' },
-                    pulsos: { $sum: 1 }
-                }
-            },
-            { $sort: { '_id': 1 } }
+                { $match: filtroPulsos },
+                { $group: { _id: { $hour: '$timestamp' }, ingresos: { $sum: '$valor' }, pulsos: { $sum: 1 } } },
+                { $sort: { '_id': 1 } }
+            ]),
+            Maquina.find(filtroMaquina).populate('local').sort({ ultimaActividad: -1 })
         ]);
 
         res.json({
-            exito: true,
-            estadisticas: {
+            metricas: {
                 totalMaquinas,
                 maquinasActivas,
                 maquinasInactivas: totalMaquinas - maquinasActivas,
-                pulsosHoy,
-                ingresosHoy: ingresosHoy[0]?.total || 0,
-                totalIngresos: totalIngresos[0]?.total || 0,
+                pulsosPeriodo,
+                ingresosPeriodo: ingresosPeriodo[0]?.total || 0,
+                totalIngresos: totalIngresos[0]?.total || 0
+            },
+            graficas: {
                 topMaquinas,
                 ingresosPorHora
-            }
+            },
+            maquinas: estadoMaquinas
         });
 
     } catch (error) {
-        console.error('Error obteniendo estadísticas dashboard:', error);
-        res.status(500).json({
-            error: 'Error interno del servidor',
-            mensaje: error.message
-        });
+        console.error('Error obteniendo estadísticas del dashboard:', error);
+        res.status(500).json({ error: 'Error interno del servidor', mensaje: error.message });
     }
 });
 

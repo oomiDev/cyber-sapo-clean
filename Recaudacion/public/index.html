@@ -332,7 +332,16 @@
         // Cargar datos del dashboard
         async function cargarDatos() {
             try {
-                const response = await fetch('/api/analytics/dashboard');
+                const region = document.getElementById('filtroRegion').value;
+                const fechaInicio = document.getElementById('fechaInicio').value;
+                const fechaFin = document.getElementById('fechaFin').value;
+
+                const url = new URL('/api/analytics/dashboard', window.location.origin);
+                if (region) url.searchParams.append('region', region);
+                if (fechaInicio) url.searchParams.append('fechaInicio', fechaInicio);
+                if (fechaFin) url.searchParams.append('fechaFin', fechaFin);
+
+                const response = await fetch(url);
                 const datos = await response.json();
                 
                 if (response.ok) {
