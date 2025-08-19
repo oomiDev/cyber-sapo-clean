@@ -641,7 +641,7 @@ async function guardarLocal(event) {
             ciudad: document.getElementById('ciudadLocal').value,
             direccion: document.getElementById('direccionLocal').value,
             codigoPostal: document.getElementById('codigoPostal').value,
-            piso: document.getElementById('pisoLocal').value
+            piso: document.getElementById('pisoZonaLocal').value
         },
         contacto: {
             nombreResponsable: document.getElementById('responsableLocal').value,
