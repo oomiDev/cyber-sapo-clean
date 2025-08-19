@@ -663,7 +663,7 @@ async function guardarLocal(event) {
         if (response.ok) {
             mostrarExito('Local guardado exitosamente');
             document.getElementById('formLocal').reset();
-            cargarLocales();
+            cargarLocales(); // Recargar la lista de locales
             cargarLocalesParaSelect();
         } else {
             mostrarError('Error al guardar local: ' + resultado.error);
