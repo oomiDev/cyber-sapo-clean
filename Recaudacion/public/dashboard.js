@@ -124,7 +124,9 @@ function actualizarGraficas(graficas) {
 
 // Gráfica de tendencia
 function actualizarGraficaTendencia(datos) {
-    const ctx = document.getElementById('chartTendencia').getContext('2d');
+    const canvas = document.getElementById('chartTendencia');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     if (charts.tendencia) charts.tendencia.destroy();
 
     const labels = datos.map(d => moment(d.fecha).format('DD/MM'));
@@ -161,7 +163,9 @@ function actualizarGraficaTendencia(datos) {
 
 // Gráfica de distribución horaria
 function actualizarGraficaHoraria(datos) {
-    const ctx = document.getElementById('chartHorario').getContext('2d');
+    const canvas = document.getElementById('chartHorario');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     if (charts.horario) charts.horario.destroy();
 
     // Rellenar horas sin datos
@@ -195,7 +199,9 @@ function actualizarGraficaHoraria(datos) {
 
 // Actualizar estado de máquinas
 function actualizarEstadoMaquinas(maquinas) {
-    const ctx = document.getElementById('chartEstados').getContext('2d');
+    const canvas = document.getElementById('chartEstados');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     if (charts.estados) charts.estados.destroy();
 
     const labels = maquinas.distribucion.map(e => e.estado);
