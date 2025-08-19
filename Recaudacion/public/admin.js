@@ -15,7 +15,19 @@ const debounce = (func, delay) => {
 };
 
 // Inicializar aplicación
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
+    // Inicialización al cargar la página
+    cargarTiposEstablecimientoSelect();
+    cargarRegionesSelect();
+    cargarLocales();
+    cargarRegiones();
+    cargarTiposMaquina();
+    cargarTiposEstablecimiento();
+    cargarMaquinas();
+    configurarPestanas();
+    configurarFormularios();
+    configurarFiltros();
+
     // --- Carga inicial de datos ---
     cargarRegiones();
     cargarLocales();
@@ -749,6 +761,8 @@ async function cargarLocalesParaSelect() {
     try {
         const response = await fetch('/api/locales?activo=true&limite=500'); // Pedir solo activos
         const datos = await response.json();
+        
+        console.log('Respuesta de /api/locales:', datos); // <-- AÑADIDO PARA DEPURAR
         
         if (response.ok) {
             const locales = datos.locales || datos;
