@@ -98,13 +98,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Inicialización
-    const init = () => {
+    const init = async () => {
         const today = new Date();
         const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
         if (startDate) startDate.value = firstDayOfMonth.toISOString().split('T')[0];
         if (endDate) endDate.value = today.toISOString().split('T')[0];
 
-        loadFilters();
+        await loadFilters();
         loadTableData();
 
         if (applyFiltersBtn) applyFiltersBtn.addEventListener('click', loadTableData);
