@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', function() {
     cargarRegiones();
     cargarLocales();
     cargarMaquinas();
-    cargarLocalesParaSelect();
     cargarRegionesParaSelects();
     
     // Configurar formularios
