@@ -39,45 +39,6 @@
         </ul>
 
         <div class="tab-content" id="adminTabContent">
-            <div class="tab-pane fade show active" id="maquinas-panel" role="tabpanel">
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="admin-card p-4">
-                            <h5 class="mb-3">Formulario de Máquina</h5>
-                            <form id="formMaquina">
-                                <input type="hidden" id="idMaquina">
-                                <div class="mb-3">
-                                    <label class="form-label">Código</label>
-                                    <input type="text" class="form-control" id="codigoMaquina" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Nombre</label>
-                                    <input type="text" class="form-control" id="nombreMaquina" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Local</label>
-                                    <select class="form-select" id="localMaquina" required></select>
-                                </div>
-                                <button type="submit" class="btn btn-primary">Guardar</button>
-                                <button type="button" class="btn btn-secondary" id="clearFormMaquina">Limpiar</button>
-                            </form>
-                        </div>
-                    </div>
-                    <div class="col-md-8">
-                        <div class="admin-card p-4">
-                            <h5 class="mb-3">Máquinas Registradas</h5>
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr><th>Código</th><th>Nombre</th><th>Local</th><th>Acciones</th></tr>
-                                    </thead>
-                                    <tbody id="tablaMaquinas"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
             <div class="tab-pane fade" id="locales-panel" role="tabpanel">
                 <div class="row">
                     <!-- Formulario para agregar local -->
@@ -109,22 +70,8 @@
                                     <div class="mb-3">
                                         <label class="form-label">Tipo de Establecimiento *</label>
                                         <select class="form-select" id="tipoEstablecimiento" required>
-                                            <option value="">Seleccionar tipo</option>
-                                            <option value="Oficina">Oficina</option>
-                                            <option value="Escuela">Escuela</option>
-                                            <option value="Universidad">Universidad</option>
-                                            <option value="Hospital">Hospital</option>
-                                            <option value="Centro Comercial">Centro Comercial</option>
-                                            <option value="Fábrica">Fábrica</option>
-                                            <option value="Restaurante">Restaurante</option>
-                                            <option value="Hotel">Hotel</option>
-                                            <option value="Gimnasio">Gimnasio</option>
-                                            <option value="Estación de Servicio">Estación de Servicio</option>
-                                            <option value="Aeropuerto">Aeropuerto</option>
-                                            <option value="Estación de Tren">Estación de Tren</option>
-                                            <option value="Centro Deportivo">Centro Deportivo</option>
-                                            <option value="Biblioteca">Biblioteca</option>
-                                            <option value="Otro">Otro</option>
+                                            <option value="">Seleccionar tipo...</option>
+                                            <!-- Opciones cargadas dinámicamente -->
                                         </select>
                                     </div>
                                 </div>
@@ -472,7 +419,7 @@
             </div>
 
             <!-- TAB: GESTIÓN DE MÁQUINAS -->
-            <div class="tab-pane fade" id="maquinas" role="tabpanel">
+            <div class="tab-pane fade show active" id="maquinas-panel" role="tabpanel">"tab-pane fade" id="maquinas" role="tabpanel">
                 <div class="row">
                     <!-- Formulario para agregar máquina -->
                     <div class="col-md-4">
