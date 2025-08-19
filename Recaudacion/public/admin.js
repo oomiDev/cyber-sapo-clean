@@ -3,6 +3,17 @@ let regionesData = [];
 let localesData = [];
 let maquinasData = [];
 
+// Función Debounce para retrasar la ejecución de una función
+const debounce = (func, delay) => {
+    let timeoutId;
+    return (...args) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            func.apply(this, args);
+        }, delay);
+    };
+};
+
 // Inicializar aplicación
 document.addEventListener('DOMContentLoaded', function() {
     // --- Carga inicial de datos ---
@@ -39,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Gestión de Locales
     safeAddEventListener('form-local', 'submit', guardarLocal);
     safeAddEventListener('btn-actualizar-locales', 'click', cargarLocales);
-    safeAddEventListener('busqueda-local', 'input', cargarLocales);
+    safeAddEventListener('busqueda-local', 'input', debounce(cargarLocales, 300));
     safeAddEventListener('filtro-region-local', 'change', cargarLocales);
     safeAddEventListener('filtro-tipo-local', 'change', cargarLocales);
     safeAddEventListener('cancelar-edicion-local', 'click', cancelarEdicionLocal);
@@ -575,34 +586,36 @@ async function cargarTiposEstablecimientoParaSelects() {
 
 // Cargar lista de locales
 async function cargarLocales() {
+    const tbody = document.getElementById('tablaLocales');
+    if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center"><i class="fas fa-spinner fa-spin me-2"></i>Cargando locales...</td></tr>';
+    }
+
     try {
-        // Obtener valores de los filtros de forma segura
-        const regionInput = document.getElementById('filtro-region-local');
-        const tipoInput = document.getElementById('filtro-tipo-local');
-        const busquedaInput = document.getElementById('busqueda-local');
+        const region = document.getElementById('filtro-region-local')?.value || '';
+        const tipo = document.getElementById('filtro-tipo-local')?.value || '';
+        const busqueda = document.getElementById('busqueda-local')?.value || '';
 
-        const region = regionInput ? regionInput.value : '';
-        const tipo = tipoInput ? tipoInput.value : '';
-        const busqueda = busquedaInput ? busquedaInput.value : '';
-
-        let url = new URL('/api/locales', window.location.origin);
+        const url = new URL('/api/locales', window.location.origin);
         if (region) url.searchParams.append('region', region);
         if (tipo) url.searchParams.append('tipo', tipo);
         if (busqueda) url.searchParams.append('busqueda', busqueda);
 
-        const response = await fetch(url);
+        const response = await fetch(url.toString());
         const datos = await response.json();
-        
+
         if (response.ok) {
-            localesData = datos.locales || datos;
+            localesData = datos.locales || [];
             actualizarTablaLocales(localesData);
         } else {
             console.error('Error cargando locales:', datos.error);
-            mostrarError('Error cargando locales: ' + datos.error);
+            mostrarError('Error al cargar locales: ' + (datos.mensaje || datos.error));
+            actualizarTablaLocales([]); // Limpiar la tabla en caso de error
         }
     } catch (error) {
         console.error('Error de conexión:', error);
-        mostrarError('Error de conexión al cargar locales');
+        mostrarError('Error de conexión al cargar locales.');
+        actualizarTablaLocales([]); // Limpiar la tabla en caso de error
     }
 }
 

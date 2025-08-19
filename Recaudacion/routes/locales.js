@@ -20,6 +20,7 @@ router.get('/', async (req, res) => {
             region, 
             ciudad, 
             tipo,
+            busqueda,
             activo = true,
             limite = 50,
             pagina = 1,
@@ -33,6 +34,12 @@ router.get('/', async (req, res) => {
         if (region) filtros['ubicacion.region'] = region;
         if (ciudad) filtros['ubicacion.ciudad'] = new RegExp(ciudad, 'i');
         if (tipo) filtros.tipoEstablecimiento = tipo;
+        if (busqueda) {
+            filtros['$or'] = [
+                { nombre: { $regex: busqueda, $options: 'i' } },
+                { codigoLocal: { $regex: busqueda, $options: 'i' } }
+            ];
+        }
 
         // Configurar ordenamiento
         const ordenamiento = {};
