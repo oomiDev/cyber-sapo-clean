@@ -26,12 +26,8 @@ function inicializarApp() {
     }
 }
 
-// Esperar a que el DOM esté completamente cargado
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', inicializarApp);
-} else {
-    inicializarApp();
-}
+// Esperar a que el DOM esté completamente cargado para inicializar la aplicación
+document.addEventListener('DOMContentLoaded', inicializarApp);
 
 // Configurar fechas por defecto
 function inicializarFechas() {

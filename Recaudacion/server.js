@@ -28,14 +28,13 @@ const PORT = process.env.PORT || 3000;
 
 // Middlewares de seguridad y configuración
 app.use(
-    helmet.contentSecurityPolicy({
-        directives: {
-            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-            "script-src": [
-                "'self'", 
-                "'unsafe-inline'",
-                "https://cdn.jsdelivr.net"
-            ],
+    helmet({
+        contentSecurityPolicy: {
+            directives: {
+                ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+                'script-src': ["'self'", "https://cdn.jsdelivr.net"],
+                'connect-src': ["'self'"]
+            },
         },
     })
 ); // Seguridad HTTP headers
