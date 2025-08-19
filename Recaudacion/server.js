@@ -40,7 +40,11 @@ app.use(
     })
 ); // Seguridad HTTP headers
 const corsOptions = {
-    origin: ['http://localhost:3000', 'https://cyber-sapo-clean.onrender.com'],
+    origin: [
+        'http://localhost:10000',
+        'http://127.0.0.1:5500',
+        'https://cyber-sapo-clean.onrender.com'
+    ],
     optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions)); // Permitir peticiones cross-origin
