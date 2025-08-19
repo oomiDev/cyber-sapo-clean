@@ -16,28 +16,24 @@ const debounce = (func, delay) => {
 
 // Inicializar aplicación
 document.addEventListener('DOMContentLoaded', () => {
-    // Inicialización al cargar la página
-    cargarTiposEstablecimientoSelect();
-    cargarRegionesSelect();
-    cargarLocales();
-    cargarRegiones();
-    cargarTiposMaquina();
-    cargarTiposEstablecimiento();
-    cargarMaquinas();
+    // 1. Configurar la estructura y los listeners
     configurarPestanas();
     configurarFormularios();
-    configurarFiltros();
+    configurarFiltros(); // Asegura que los botones y filtros tengan listeners
 
-    // --- Carga inicial de datos ---
+    // 2. Cargar datos para los selects de los formularios y filtros
+    cargarRegionesParaSelects();
+    cargarTiposEstablecimientoParaSelects();
+    cargarLocalesParaSelect();
+
+    // 3. Cargar los datos principales en las tablas
     cargarRegiones();
     cargarLocales();
     cargarMaquinas();
-    cargarRegionesParaSelects();
     cargarTiposMaquina();
     cargarTiposEstablecimiento();
-    cargarTiposEstablecimientoParaSelects();
 
-    // --- Asignación segura de Event Listeners ---
+    // --- Asignación segura de Event Listeners (movido a configurarFiltros y configurarFormularios) ---
     const safeAddEventListener = (id, event, handler) => {
         const element = document.getElementById(id);
         if (element) {
